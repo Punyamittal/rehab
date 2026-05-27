@@ -3,9 +3,9 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { LEARNING_MODULES } from "@/data/modules";
-import { BRANCHING_STORIES } from "@/data/stories";
 import { useAppStore } from "@/stores/app-store";
+import { useCatalogStore } from "@/stores/catalog-store";
+import { CatalogLoader } from "@/components/ui/CatalogLoader";
 import { t, topicLabel } from "@/lib/i18n/translations";
 import { localized } from "@/lib/i18n/content";
 import { getProgressPercent, cn } from "@/lib/utils";
@@ -40,12 +40,14 @@ export function HomeDashboard() {
     getCompletedModuleCount,
   } = useAppStore();
 
+  const modules = useCatalogStore((s) => s.modules);
+  const stories = useCatalogStore((s) => s.stories);
   const completed = getCompletedModuleCount();
-  const total = LEARNING_MODULES.length;
-  const progressPercent = getProgressPercent(completed, total);
+  const total = modules.length;
+  const progressPercent = getProgressPercent(completed, total || 1);
 
   return (
-    <>
+    <CatalogLoader>
       <AppHeader />
       <div className="mx-auto max-w-4xl px-4 pb-10 pt-4 md:px-8 md:pt-6">
         {/* Hero */}
@@ -180,7 +182,7 @@ export function HomeDashboard() {
             linkLabel={t(language, "allModulesLink")}
           />
           <div className="mt-4 grid gap-3 sm:grid-cols-2 sm:gap-4">
-            {LEARNING_MODULES.map((mod, i) => {
+            {modules.map((mod, i) => {
               const prog = moduleProgress[mod.id];
               const isDone = prog?.completed;
               const inProgress = prog && !isDone;
@@ -260,7 +262,7 @@ export function HomeDashboard() {
         </motion.div>
 
         {/* Stories */}
-        {BRANCHING_STORIES.length > 0 && (
+        {stories.length > 0 && (
           <motion.div custom={7} variants={stagger} initial="hidden" animate="show" className="mt-8">
             <SectionHeader
               title={t(language, "stories")}
@@ -268,7 +270,7 @@ export function HomeDashboard() {
               linkLabel={t(language, "viewAllLink")}
             />
             <div className="mt-4 grid gap-3 sm:grid-cols-2 sm:gap-4">
-              {BRANCHING_STORIES.map((story, i) => {
+              {stories.map((story, i) => {
                 const isFeatured = story.slug === "do-raste";
                 const title = localized(language, story.titleHi, story.titleEn);
                 const desc = localized(
@@ -345,7 +347,7 @@ export function HomeDashboard() {
           <LogoutButton />
         </div>
       </div>
-    </>
+    </CatalogLoader>
   );
 }
 

@@ -5,6 +5,12 @@ import { loadVoices, isSpeechSupported } from "@/lib/narration/speech";
 import { HtmlLangSync } from "@/components/providers/HtmlLangSync";
 import { StudentPathGuard } from "@/components/student/StudentPathGuard";
 import { HoverReadAloud } from "@/components/audio/HoverReadAloud";
+import { useSupabaseBootstrap } from "@/hooks/useSupabaseBootstrap";
+
+function SupabaseBootstrap() {
+  useSupabaseBootstrap();
+  return null;
+}
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
@@ -27,6 +33,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   return (
     <>
       <HtmlLangSync />
+      <SupabaseBootstrap />
       <StudentPathGuard />
       <HoverReadAloud />
       {children}

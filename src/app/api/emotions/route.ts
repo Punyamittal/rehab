@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { isSupabaseConfigured, createClient } from "@/lib/supabase/client";
+import { isSupabaseServerConfigured } from "@/lib/supabase/env";
+import { insertEmotionLog } from "@/lib/supabase/server-data";
 
 export async function POST(request: Request) {
   const body = await request.json();
@@ -12,24 +13,23 @@ export async function POST(request: Request) {
     );
   }
 
-  if (isSupabaseConfigured()) {
-    const supabase = createClient();
-    if (supabase) {
-      const { error } = await supabase.from("emotion_logs").insert({
-        student_id: studentId,
-        module_id: moduleId ?? null,
-        story_id: storyId ?? null,
-        check_type: checkType,
-        emotion,
-      });
-      if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
-      }
-    }
+  if (!isSupabaseServerConfigured()) {
+    return NextResponse.json(
+      { error: "Supabase is not configured" },
+      { status: 503 }
+    );
   }
 
-  return NextResponse.json({
-    ok: true,
-    persisted: isSupabaseConfigured(),
-  });
+  try {
+    await insertEmotionLog(studentId, {
+      emotion,
+      checkType,
+      moduleSlug: moduleId ?? undefined,
+      storySlug: storyId ?? undefined,
+    });
+    return NextResponse.json({ ok: true, persisted: true });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Failed to save emotion";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }

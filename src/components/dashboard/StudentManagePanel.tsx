@@ -23,7 +23,7 @@ export function StudentManagePanel() {
   const [error, setError] = useState<string | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!isValidStudentAlias(alias)) {
       setError(t(language, "studentNameRequired"));
       return;
@@ -36,15 +36,23 @@ export function StudentManagePanel() {
       setError(t(language, "studentNameDuplicate"));
       return;
     }
-    addManagedStudent(alias, emoji);
-    setAlias("");
-    setEmoji(STUDENT_AVATAR_EMOJIS[0]);
-    setError(null);
+    try {
+      await addManagedStudent(alias, emoji);
+      setAlias("");
+      setEmoji(STUDENT_AVATAR_EMOJIS[0]);
+      setError(null);
+    } catch {
+      setError(t(language, "studentNameRequired"));
+    }
   };
 
-  const confirmDelete = (studentId: string) => {
-    removeManagedStudent(studentId);
-    setPendingDeleteId(null);
+  const confirmDelete = async (studentId: string) => {
+    try {
+      await removeManagedStudent(studentId);
+      setPendingDeleteId(null);
+    } catch {
+      setPendingDeleteId(null);
+    }
   };
 
   return (

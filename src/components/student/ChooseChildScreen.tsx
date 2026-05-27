@@ -33,10 +33,9 @@ export function ChooseChildScreen() {
     return null;
   }
 
-  const handleSelect = (id: string) => {
-    if (selectStudentProfile(id)) {
-      router.push("/home");
-    }
+  const handleSelect = async (id: string) => {
+    const ok = await selectStudentProfile(id);
+    if (ok) router.push("/home");
   };
 
   return (

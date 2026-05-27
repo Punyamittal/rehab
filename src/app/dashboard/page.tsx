@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAppStore } from "@/stores/app-store";
 import { t } from "@/lib/i18n/translations";
 import { AppHeader } from "@/components/layout/AppHeader";
@@ -15,8 +15,15 @@ export default function FacilitatorDashboardPage() {
   const removeManagedStudent = useAppStore((s) => s.removeManagedStudent);
   const updateManagedStudentNote = useAppStore((s) => s.updateManagedStudentNote);
   const awardStudentPoints = useAppStore((s) => s.awardStudentPoints);
+  const loadManagedStudents = useAppStore((s) => s.loadManagedStudents);
+  const studentsLoading = useAppStore((s) => s.studentsLoading);
+  const studentsError = useAppStore((s) => s.studentsError);
 
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+
+  useEffect(() => {
+    void loadManagedStudents();
+  }, [loadManagedStudents]);
 
   const presentCount = managedStudents.filter((s) => s.presentToday).length;
   const total = managedStudents.length;
@@ -25,9 +32,9 @@ export default function FacilitatorDashboardPage() {
     if (typeof window !== "undefined") window.print();
   };
 
-  const handleDeleteFromTable = (studentId: string) => {
+  const handleDeleteFromTable = async (studentId: string) => {
     if (pendingDeleteId === studentId) {
-      removeManagedStudent(studentId);
+      await removeManagedStudent(studentId);
       setPendingDeleteId(null);
       return;
     }
@@ -69,7 +76,17 @@ export default function FacilitatorDashboardPage() {
           </div>
         </div>
 
+        {studentsError && (
+          <p className="no-print mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
+            {studentsError}
+          </p>
+        )}
+
         <StudentManagePanel />
+
+        {studentsLoading && total === 0 && (
+          <p className="mb-4 text-center text-sm text-muted">Loading…</p>
+        )}
 
         {pendingDeleteId && (
           <p className="no-print mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-center text-sm text-red-900">
@@ -93,7 +110,7 @@ export default function FacilitatorDashboardPage() {
         />
 
         <p className="no-print mt-8 text-center text-sm text-muted">
-          {t(language, "childrenSavedLocally")}
+          {t(language, "childrenSavedToCloud")}
         </p>
       </div>
     </>

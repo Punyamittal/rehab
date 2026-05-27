@@ -2,13 +2,14 @@
 
 import { use, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getModuleBySlug } from "@/data/modules";
 import { ModulePlayer } from "@/components/learning/ModulePlayer";
 import { EmotionCheckIn } from "@/components/emotion/EmotionCheckIn";
 import { useAppStore } from "@/stores/app-store";
+import { useCatalogStore } from "@/stores/catalog-store";
 import { t } from "@/lib/i18n/translations";
 import { Button } from "@/components/ui/Button";
 import { AppControls } from "@/components/layout/AppControls";
+import { CatalogLoader } from "@/components/ui/CatalogLoader";
 
 type Phase = "pre" | "learning" | "post" | "done";
 
@@ -20,15 +21,18 @@ export default function ModulePage({
   const { slug } = use(params);
   const router = useRouter();
   const language = useAppStore((s) => s.language);
+  const getModuleBySlug = useCatalogStore((s) => s.getModuleBySlug);
   const mod = getModuleBySlug(slug);
   const [phase, setPhase] = useState<Phase>("pre");
 
   if (!mod) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4">
-        <AppControls />
-        <p>{t(language, "moduleNotFound")}</p>
-      </div>
+      <CatalogLoader>
+        <div className="flex min-h-screen flex-col items-center justify-center gap-4">
+          <AppControls />
+          <p>{t(language, "moduleNotFound")}</p>
+        </div>
+      </CatalogLoader>
     );
   }
 

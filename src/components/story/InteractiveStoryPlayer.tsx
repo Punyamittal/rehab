@@ -4,13 +4,12 @@ import { useState, useEffect, useCallback, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { BranchingStory, StoryCharacter, StoryScene } from "@/types";
 import { useAppStore } from "@/stores/app-store";
-import { useNarration, useAutoNarrate } from "@/hooks/useNarration";
+import { useNarration, useAutoNarrate, useSpeechThenAdvance } from "@/hooks/useNarration";
 import { getCharacterVoiceGender } from "@/lib/narration/voice-profiles";
 import { buildNarrationScript } from "@/lib/narration/speech";
 import { buildChoicesNarration } from "@/lib/narration/question-narration";
 import {
   CHOICE_ADVANCE_MS,
-  estimateDwellMs,
 } from "@/lib/narration/story-timing";
 import { localized } from "@/lib/i18n/content";
 import { usesEnglishContent } from "@/lib/i18n/languages";
@@ -79,22 +78,22 @@ export function InteractiveStoryPlayer({
 
   const scene = scenes[sceneIndex];
   const title = localized(language, story.titleHi, story.titleEn);
-  const progress = ((sceneIndex + 1) / scenes.length) * 100;
+  const progress = scenes.length
+    ? ((sceneIndex + 1) / scenes.length) * 100
+    : 0;
   const isCinematic = scene?.type === "cinematic";
 
-  if (!scene) {
-    return null;
-  }
-
-  const needsChoice =
-    scene.type === "interactive" ||
-    scene.type === "quiz" ||
-    scene.type === "cinematic";
+  const needsChoice = Boolean(
+    scene &&
+      (scene.type === "interactive" ||
+        scene.type === "quiz" ||
+        scene.type === "cinematic")
+  );
   const canProceed =
     !needsChoice ||
-    (scene.type === "interactive" && selectedChoice !== null) ||
-    (scene.type === "quiz" && quizFeedback === "correct") ||
-    (scene.type === "cinematic" && selectedChoice !== null);
+    (scene?.type === "interactive" && selectedChoice !== null) ||
+    (scene?.type === "quiz" && quizFeedback === "correct") ||
+    (scene?.type === "cinematic" && selectedChoice !== null);
 
   const goNext = useCallback(() => {
     stop();
@@ -120,7 +119,7 @@ export function InteractiveStoryPlayer({
 
   const handleChoice = (choiceId: string, correct?: boolean) => {
     setSelectedChoice(choiceId);
-    if (scene.type === "quiz") {
+    if (scene?.type === "quiz") {
       if (correct) {
         setQuizFeedback("correct");
         void speak(t(language, "correct"), language);
@@ -131,24 +130,37 @@ export function InteractiveStoryPlayer({
     }
   };
 
-  // Auto-advance non-cinematic scenes
-  useEffect(() => {
-    if (!scene || scene.type === "cinematic" || scene.type === "ending") return;
-
-    if (needsChoice) {
-      if (!canProceed) return;
-      if (scene.type === "quiz" && quizFeedback !== "correct") return;
-      const timer = setTimeout(goNext, CHOICE_ADVANCE_MS);
-      return () => clearTimeout(timer);
+  const nonCinematicNarration = (() => {
+    if (!scene || scene.type === "cinematic" || scene.type === "ending") {
+      return "";
     }
-
     const narrative = localized(language, scene.narrativeHi, scene.narrativeEn);
     const caption = scene.captionHi
       ? localized(language, scene.captionHi, scene.captionEn ?? "")
       : "";
-    const text = buildNarrationScript(narrative, caption);
-    const dwell = estimateDwellMs(text, autoNarrate && soundEnabled);
-    const timer = setTimeout(goNext, dwell);
+    return buildNarrationScript(narrative, caption);
+  })();
+
+  useSpeechThenAdvance({
+    contentKey: `${story.id}-${scene?.id ?? sceneIndex}-${sceneIndex}-${language}-auto`,
+    text: nonCinematicNarration,
+    enabled:
+      Boolean(scene) &&
+      scene.type !== "cinematic" &&
+      scene.type !== "ending" &&
+      !needsChoice &&
+      nonCinematicNarration.length > 0,
+    voiceGender: getCharacterVoiceGender(scene?.character),
+    onAdvance: goNext,
+  });
+
+  // Auto-advance after choice scenes (quiz / interactive)
+  useEffect(() => {
+    if (!scene || scene.type === "cinematic" || scene.type === "ending") return;
+    if (!needsChoice) return;
+    if (!canProceed) return;
+    if (scene.type === "quiz" && quizFeedback !== "correct") return;
+    const timer = setTimeout(goNext, CHOICE_ADVANCE_MS);
     return () => clearTimeout(timer);
   }, [
     scene,
@@ -156,9 +168,6 @@ export function InteractiveStoryPlayer({
     needsChoice,
     canProceed,
     quizFeedback,
-    language,
-    autoNarrate,
-    soundEnabled,
     goNext,
   ]);
 
@@ -168,6 +177,10 @@ export function InteractiveStoryPlayer({
     const timer = setTimeout(goNext, CHOICE_ADVANCE_MS);
     return () => clearTimeout(timer);
   }, [scene?.type, sceneIndex, selectedChoice, goNext]);
+
+  if (!scene) {
+    return null;
+  }
 
   if (scene.type === "ending") {
     return (
@@ -267,6 +280,8 @@ function StoryViewportShell({
 }) {
   return (
     <div
+      data-story-player
+      data-no-hover-read
       className={`fixed inset-0 z-40 flex items-center justify-center overflow-hidden ${
         isCinematic ? "bg-[#141010]" : "bg-[#1a1410]"
       }`}

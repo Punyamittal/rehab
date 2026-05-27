@@ -2,24 +2,26 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { BRANCHING_STORIES } from "@/data/stories";
 import { useAppStore } from "@/stores/app-store";
+import { useCatalogStore } from "@/stores/catalog-store";
 import { t, topicLabel } from "@/lib/i18n/translations";
 import { localized } from "@/lib/i18n/content";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { Card } from "@/components/ui/Card";
+import { CatalogLoader } from "@/components/ui/CatalogLoader";
 
 export default function StoriesCatalogPage() {
   const { language } = useAppStore();
+  const stories = useCatalogStore((s) => s.stories);
 
   return (
-    <>
+    <CatalogLoader>
       <AppHeader showBack backHref="/home" title={t(language, "stories")} />
       <div className="mx-auto max-w-4xl px-4 py-8">
         <p className="mb-6 text-muted">{t(language, "storiesPageIntro")}</p>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          {BRANCHING_STORIES.map((story, i) => {
+          {stories.map((story, i) => {
             const title = localized(language, story.titleHi, story.titleEn);
             const desc = localized(
               language,
@@ -54,6 +56,6 @@ export default function StoriesCatalogPage() {
           })}
         </div>
       </div>
-    </>
+    </CatalogLoader>
   );
 }

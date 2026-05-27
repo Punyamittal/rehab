@@ -2,6 +2,7 @@ const MAX_HOVER_CHARS = 600;
 
 const EXCLUDED_SELECTOR = [
   "[data-no-hover-read]",
+  "[data-story-player]",
   "script",
   "style",
   "noscript",

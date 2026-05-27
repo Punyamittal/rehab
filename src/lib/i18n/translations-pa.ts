@@ -132,6 +132,7 @@ export const translationsPa = {
   markAbsent: "ਗੈਰ-ਹਾਜ਼ਰ",
   markAllPresent: "ਸਭ ਹਾਜ਼ਰ",
   childrenSavedLocally: "ਬੱਚਿਆਂ ਦੀ ਸੂਚੀ ਇਸ ਡਿਵਾਈਸ ਤੇ ਸੁਰੱਖਿਅਤ ਹੈ।",
+  childrenSavedToCloud: "ਬੱਚਿਆਂ ਦੀ ਸੂਚੀ Supabase ਵਿੱਚ ਸੁਰੱਖਿਅਤ ਹੈ।",
   score: "ਸਕੋਰ",
   totalPoints: "ਕੁੱਲ ਅੰਕ",
   assessmentPoints: "ਅਸੈਸਮੈਂਟ",

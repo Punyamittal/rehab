@@ -5,10 +5,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import type { Language, StoryScene, StorySceneChoice } from "@/types";
 import { localized } from "@/lib/i18n/content";
 import { usesEnglishContent } from "@/lib/i18n/languages";
-import { estimateDwellMs } from "@/lib/narration/story-timing";
 import { buildChoicesNarration } from "@/lib/narration/question-narration";
-import { useAppStore } from "@/stores/app-store";
-import { useAutoNarrate } from "@/hooks/useNarration";
+import { stopSpeaking } from "@/lib/narration/speech";
+import { useSpeechThenAdvance } from "@/hooks/useNarration";
 import { NarrationButton } from "@/components/audio/NarrationButton";
 import { CharacterPortrait } from "@/components/story/CharacterPortrait";
 import { getCharacterLabel } from "@/components/story/story-characters";
@@ -41,7 +40,6 @@ export function CinematicCorridorScene({
 
   const [dialogueIndex, setDialogueIndex] = useState(0);
   const [showChoices, setShowChoices] = useState(false);
-  const { autoNarrate, soundEnabled } = useAppStore();
 
   const activeDialogue = dialogues[dialogueIndex];
   const activeCharacter = activeDialogue?.character;
@@ -91,15 +89,6 @@ export function CinematicCorridorScene({
         )
       : "";
 
-  useAutoNarrate(
-    showChoices
-      ? `${storyId}-${scene.id}-choices-${language}`
-      : `${storyId}-${scene.id}-line-${dialogueIndex}-${language}`,
-    showChoices ? choiceNarration : subtitle,
-    undefined,
-    activeCharacter ? "female" : undefined
-  );
-
   useEffect(() => {
     setDialogueIndex(0);
     setShowChoices(false);
@@ -107,6 +96,7 @@ export function CinematicCorridorScene({
 
   const advanceDialogue = () => {
     if (showChoices) return;
+    stopSpeaking();
     if (dialogueIndex < dialogues.length - 1) {
       setDialogueIndex((i) => i + 1);
     } else {
@@ -114,25 +104,28 @@ export function CinematicCorridorScene({
     }
   };
 
-  useEffect(() => {
-    if (showChoices || !subtitle) return;
-    const dwell = estimateDwellMs(subtitle, autoNarrate && soundEnabled);
-    const timer = setTimeout(() => {
+  useSpeechThenAdvance({
+    contentKey: `${storyId}-${scene.id}-line-${dialogueIndex}-${language}`,
+    text: subtitle,
+    enabled: !showChoices && Boolean(subtitle),
+    voiceGender: activeCharacter ? "female" : undefined,
+    onAdvance: () => {
       if (dialogueIndex < dialogues.length - 1) {
         setDialogueIndex((i) => i + 1);
       } else {
         setShowChoices(true);
       }
-    }, dwell);
-    return () => clearTimeout(timer);
-  }, [
-    dialogueIndex,
-    showChoices,
-    subtitle,
-    autoNarrate,
-    soundEnabled,
-    dialogues.length,
-  ]);
+    },
+  });
+
+  useSpeechThenAdvance({
+    contentKey: `${storyId}-${scene.id}-choices-${language}`,
+    text: choiceNarration,
+    enabled: showChoices && choiceNarration.length > 0,
+    advanceOnComplete: false,
+    voiceGender: "female",
+    onAdvance: () => {},
+  });
 
   return (
     <div className="relative flex h-full min-h-0 flex-col overflow-hidden">

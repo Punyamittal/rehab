@@ -2,12 +2,13 @@
 
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getStoryBySlug } from "@/data/stories";
 import { StoryEngine } from "@/components/story/StoryEngine";
 import { EmotionCheckIn } from "@/components/emotion/EmotionCheckIn";
 import { useAppStore } from "@/stores/app-store";
+import { useCatalogStore } from "@/stores/catalog-store";
 import { t } from "@/lib/i18n/translations";
 import { AppControls } from "@/components/layout/AppControls";
+import { CatalogLoader } from "@/components/ui/CatalogLoader";
 
 type Phase = "pre" | "story" | "post" | "done";
 
@@ -19,6 +20,7 @@ export default function StoryPage({
   const { slug } = use(params);
   const router = useRouter();
   const language = useAppStore((s) => s.language);
+  const getStoryBySlug = useCatalogStore((s) => s.getStoryBySlug);
   const story = getStoryBySlug(slug);
   const [phase, setPhase] = useState<Phase>("pre");
 
@@ -35,10 +37,12 @@ export default function StoryPage({
 
   if (!story) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4">
-        <AppControls />
-        <p>{t(language, "storyNotFound")}</p>
-      </div>
+      <CatalogLoader>
+        <div className="flex min-h-screen flex-col items-center justify-center gap-4">
+          <AppControls />
+          <p>{t(language, "storyNotFound")}</p>
+        </div>
+      </CatalogLoader>
     );
   }
 

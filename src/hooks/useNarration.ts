@@ -8,6 +8,11 @@ import {
   speakText,
   stopSpeaking,
 } from "@/lib/narration/speech";
+import {
+  estimateDwellMs,
+  LINE_PAUSE_MS,
+  SPEECH_FALLBACK_BUFFER_MS,
+} from "@/lib/narration/story-timing";
 import { useAppStore } from "@/stores/app-store";
 import type { Language } from "@/types";
 import type { VoiceGender } from "@/lib/narration/voice-profiles";
@@ -93,7 +98,6 @@ export function useAutoNarrate(
 
     return () => {
       clearTimeout(timer);
-      stop();
     };
   }, [
     contentKey,
@@ -104,7 +108,93 @@ export function useAutoNarrate(
     title,
     voiceGender,
     speak,
-    stop,
+  ]);
+}
+
+/**
+ * Speak a line, then call onAdvance after audio ends (or fallback timer).
+ * Use for cinematic dialogues so lines are not cut off mid-sentence.
+ */
+export function useSpeechThenAdvance({
+  contentKey,
+  text,
+  enabled,
+  onAdvance,
+  advanceOnComplete = true,
+  voiceGender,
+  pauseAfterMs = LINE_PAUSE_MS,
+}: {
+  contentKey: string;
+  text: string;
+  enabled: boolean;
+  onAdvance: () => void;
+  /** When false, only narrates (e.g. choice list) without advancing. */
+  advanceOnComplete?: boolean;
+  voiceGender?: VoiceGender;
+  pauseAfterMs?: number;
+}) {
+  const { autoNarrate, soundEnabled, language } = useAppStore();
+  const onAdvanceRef = useRef(onAdvance);
+  onAdvanceRef.current = onAdvance;
+
+  useEffect(() => {
+    if (!enabled || !text.trim()) return;
+
+    let cancelled = false;
+    let advanced = false;
+
+    const fireAdvance = () => {
+      if (!advanceOnComplete || cancelled || advanced) return;
+      advanced = true;
+      window.setTimeout(() => {
+        if (!cancelled) onAdvanceRef.current();
+      }, pauseAfterMs);
+    };
+
+    const useVoice = autoNarrate && soundEnabled;
+    const fallbackMs =
+      estimateDwellMs(text, useVoice) +
+      (useVoice ? SPEECH_FALLBACK_BUFFER_MS : 0);
+
+    const fallbackTimer = window.setTimeout(fireAdvance, fallbackMs);
+
+    if (useVoice) {
+      const startTimer = window.setTimeout(() => {
+        if (cancelled) return;
+        void speakText(text, {
+          language,
+          voiceGender,
+          onEnd: () => {
+            window.clearTimeout(fallbackTimer);
+            fireAdvance();
+          },
+          onError: () => {
+            /* fallback timer still runs */
+          },
+        });
+      }, 300);
+
+      return () => {
+        cancelled = true;
+        window.clearTimeout(startTimer);
+        window.clearTimeout(fallbackTimer);
+      };
+    }
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(fallbackTimer);
+    };
+  }, [
+    contentKey,
+    text,
+    enabled,
+    advanceOnComplete,
+    autoNarrate,
+    soundEnabled,
+    language,
+    voiceGender,
+    pauseAfterMs,
   ]);
 }
 
