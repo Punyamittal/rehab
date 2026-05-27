@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+:root {
+  --background: #fff9f5;
+  --foreground: #4a3728;
+  --primary: #e8a87c;
+  --primary-dark: #c38d6a;
+  --secondary: #c5a3e0;
+  --accent: #85d4b8;
+  --card: #ffffff;
+  --muted: #8b7355;
+  --gradient-start: #ffe8d6;
+  --gradient-mid: #f3e5f5;
+  --gradient-end: #e8f5e9;
+  --safe-shadow: 0 4px 24px rgba(74, 55, 40, 0.08);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-dark: var(--primary-dark);
+  --color-secondary: var(--secondary);
+  --color-accent: var(--accent);
+  --color-card: var(--card);
+  --color-muted: var(--muted);
+  --font-sans: var(--font-noto);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: linear-gradient(
+    160deg,
+    var(--gradient-start) 0%,
+    var(--gradient-mid) 45%,
+    var(--gradient-end) 100%
+  );
+  background-attachment: fixed;
+  color: var(--foreground);
+  font-family: var(--font-noto), system-ui, sans-serif;
+  min-height: 100vh;
+}
+
+@media print {
+  body {
+    background: white;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
+
+/* Large touch targets for accessibility */
+button,
+a[role="button"],
+.touch-target {
+  min-height: 48px;
+  min-width: 48px;
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
