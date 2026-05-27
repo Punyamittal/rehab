@@ -9,7 +9,10 @@ import {
 export async function GET() {
   if (!isSupabaseServerConfigured()) {
     return NextResponse.json(
-      { error: "Supabase is not configured" },
+      {
+        error:
+          "Supabase is not configured. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to .env",
+      },
       { status: 503 }
     );
   }
@@ -27,7 +30,10 @@ export async function GET() {
 export async function POST(request: Request) {
   if (!isSupabaseServerConfigured()) {
     return NextResponse.json(
-      { error: "Supabase is not configured" },
+      {
+        error:
+          "Supabase is not configured. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to .env",
+      },
       { status: 503 }
     );
   }

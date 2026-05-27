@@ -328,7 +328,7 @@ export const useAppStore = create<AppState>()(
         Object.values(get().moduleProgress).filter((p) => p.completed).length,
 
       addManagedStudent: async (alias, avatarEmoji) => {
-        const row = await apiCreateStudent(alias, avatarEmoji);
+        const row = await apiCreateStudent(alias.trim(), avatarEmoji);
         set((state) => ({
           managedStudents: [...state.managedStudents, withTotalPoints(row)],
         }));

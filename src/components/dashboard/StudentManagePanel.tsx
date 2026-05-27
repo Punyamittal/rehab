@@ -22,27 +22,38 @@ export function StudentManagePanel() {
   const [emoji, setEmoji] = useState<string>(STUDENT_AVATAR_EMOJIS[0]);
   const [error, setError] = useState<string | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [isAdding, setIsAdding] = useState(false);
 
   const handleAdd = async () => {
-    if (!isValidStudentAlias(alias)) {
+    const trimmed = alias.trim();
+    if (!isValidStudentAlias(trimmed)) {
       setError(t(language, "studentNameRequired"));
       return;
     }
     const duplicate = managedStudents.some(
-      (row) =>
-        row.student.alias.toLowerCase() === alias.trim().toLowerCase()
+      (row) => row.student.alias.toLowerCase() === trimmed.toLowerCase()
     );
     if (duplicate) {
       setError(t(language, "studentNameDuplicate"));
       return;
     }
+    setIsAdding(true);
+    setError(null);
     try {
-      await addManagedStudent(alias, emoji);
+      await addManagedStudent(trimmed, emoji);
       setAlias("");
       setEmoji(STUDENT_AVATAR_EMOJIS[0]);
-      setError(null);
-    } catch {
-      setError(t(language, "studentNameRequired"));
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "";
+      if (message.toLowerCase().includes("already")) {
+        setError(t(language, "studentNameDuplicate"));
+      } else if (message.includes("not configured") || message.includes("503")) {
+        setError(t(language, "supabaseNotConfigured"));
+      } else {
+        setError(message || t(language, "addChildFailed"));
+      }
+    } finally {
+      setIsAdding(false);
     }
   };
 
@@ -112,8 +123,13 @@ export function StudentManagePanel() {
           </div>
         </div>
 
-        <Button size="lg" onClick={handleAdd} className="shrink-0 sm:min-w-[140px]">
-          + {t(language, "addChild")}
+        <Button
+          size="lg"
+          onClick={() => void handleAdd()}
+          disabled={isAdding}
+          className="shrink-0 sm:min-w-[140px]"
+        >
+          {isAdding ? "…" : `+ ${t(language, "addChild")}`}
         </Button>
       </div>
 

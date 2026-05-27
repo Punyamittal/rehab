@@ -22,5 +22,11 @@ export function isSupabaseConfigured(): boolean {
 }
 
 export function isSupabaseServerConfigured(): boolean {
+  return Boolean(
+    getSupabaseUrl() && (getSupabaseServiceRoleKey() || getSupabaseAnonKey())
+  );
+}
+
+export function usesServiceRoleOnServer(): boolean {
   return Boolean(getSupabaseUrl() && getSupabaseServiceRoleKey());
 }

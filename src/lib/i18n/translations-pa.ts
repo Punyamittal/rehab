@@ -120,6 +120,9 @@ export const translationsPa = {
   studentName: "ਬੱਚੇ ਦਾ ਨਾਮ",
   studentNamePlaceholder: "ਜਿਵੇਂ — ਬੁਲਬੁਲ",
   studentNameRequired: "ਕਿਰਪਾ ਕਰਕੇ ਨਾਮ ਲਿਖੋ।",
+  addChildFailed: "ਬੱਚਾ ਨਹੀਂ ਜੋੜਿਆ ਜਾ ਸਕਿਆ। ਕਨੈਕਸ਼ਨ ਜਾਂਚੋ।",
+  supabaseNotConfigured:
+    "Supabase ਕਨੈਕਟ ਨਹੀਂ। .env ਵਿੱਚ keys ਜੋੜੋ ਅਤੇ policies-kiosk.sql ਚਲਾਓ।",
   studentNameDuplicate: "ਇਹ ਨਾਮ ਪਹਿਲਾਂ ਹੀ ਹੈ।",
   pickEmoji: "emoji ਚੁਣੋ",
   addChild: "ਬੱਚਾ ਜੋੜੋ",

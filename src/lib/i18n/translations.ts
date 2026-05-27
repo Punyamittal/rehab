@@ -124,6 +124,9 @@ export const translations = {
     studentName: "बच्चे का नाम",
     studentNamePlaceholder: "जैसे — बुलबुल",
     studentNameRequired: "कृपया नाम लिखें।",
+    addChildFailed: "बच्चा जोड़ नहीं सका। कनेक्शन जाँचें।",
+    supabaseNotConfigured:
+      "Supabase कनेक्ट नहीं है। .env में keys जोड़ें और supabase/policies-kiosk.sql चलाएँ।",
     studentNameDuplicate: "यह नाम पहले से है।",
     pickEmoji: "emoji चुनें",
     addChild: "बच्चा जोड़ें",
@@ -274,6 +277,9 @@ export const translations = {
     studentName: "Child's name",
     studentNamePlaceholder: "e.g. Bulbul",
     studentNameRequired: "Please enter a name.",
+    addChildFailed: "Could not add child. Check your connection.",
+    supabaseNotConfigured:
+      "Supabase is not connected. Add keys to .env and run supabase/policies-kiosk.sql.",
     studentNameDuplicate: "This name is already on the list.",
     pickEmoji: "Pick emoji",
     addChild: "Add child",

@@ -23,7 +23,9 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 NEXT_PUBLIC_CENTRE_ID=00000000-0000-4000-8000-000000000001
 ```
 
-`SUPABASE_SERVICE_ROLE_KEY` is **required** — all app data goes through API routes using this key (Dashboard → Settings → API).
+**Option A (recommended):** add `SUPABASE_SERVICE_ROLE_KEY` (Dashboard → Settings → API → `service_role`). It bypasses RLS.
+
+**Option B (anon key only):** run `supabase/policies-kiosk.sql` after `schema.sql` so the anon key can add/read children without login.
 
 ## 4. Auth (facilitators)
 

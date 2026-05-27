@@ -26,10 +26,22 @@ import type {
 async function admin(): Promise<SupabaseClient> {
   const client = createAdminClient();
   if (!client) {
-    throw new Error("Supabase service role is not configured");
+    throw new Error(
+      "Supabase is not configured. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to .env"
+    );
   }
   await ensureCatalogSeeded(client);
   return client;
+}
+
+function formatDbError(error: { message: string; code?: string }): string {
+  if (error.code === "23505") {
+    return "This name is already registered.";
+  }
+  if (error.code === "23503") {
+    return "Centre not found. Run supabase/seed.sql or set NEXT_PUBLIC_CENTRE_ID.";
+  }
+  return error.message;
 }
 
 export async function fetchPublishedModules(): Promise<LearningModule[]> {
@@ -134,7 +146,7 @@ export async function createCentreStudent(
     })
     .select()
     .single();
-  if (error) throw error;
+  if (error) throw new Error(formatDbError(error));
   return mapFacilitatorRow(data as DbStudent, totalModules, 0);
 }
 
