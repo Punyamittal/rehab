@@ -17,6 +17,7 @@ import { getCentreId } from "@/lib/supabase/env";
 import {
   countCompletedModules,
   emptyStudentSession,
+  normalizeStudentSession,
   snapshotActiveSession,
 } from "@/lib/students/student-sessions";
 import type {
@@ -187,13 +188,16 @@ export const useAppStore = create<AppState>()(
         let loaded = emptyStudentSession();
         if (isSupabaseConfigured()) {
           try {
-            loaded = await fetchStudentSession(studentId);
+            loaded = normalizeStudentSession(
+              await fetchStudentSession(studentId)
+            );
           } catch {
-            loaded =
-              state.studentSessions[studentId] ?? emptyStudentSession();
+            loaded = normalizeStudentSession(
+              state.studentSessions[studentId]
+            );
           }
         } else {
-          loaded = state.studentSessions[studentId] ?? emptyStudentSession();
+          loaded = normalizeStudentSession(state.studentSessions[studentId]);
         }
 
         const sessions = {
@@ -325,7 +329,7 @@ export const useAppStore = create<AppState>()(
         }),
 
       getCompletedModuleCount: () =>
-        Object.values(get().moduleProgress).filter((p) => p.completed).length,
+        countCompletedModules(get().moduleProgress),
 
       addManagedStudent: async (alias, avatarEmoji) => {
         const row = await apiCreateStudent(alias.trim(), avatarEmoji);

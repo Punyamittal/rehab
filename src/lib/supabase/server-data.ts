@@ -14,6 +14,7 @@ import {
   type DbStoryRow,
   type DbStudent,
 } from "@/lib/supabase/mappers";
+import { normalizeStudentSession } from "@/lib/students/student-sessions";
 import type {
   BranchingStory,
   EmotionType,
@@ -223,13 +224,14 @@ export async function saveStudentSession(
   session: StudentSession
 ): Promise<void> {
   const db = await admin();
+  const safe = normalizeStudentSession(session);
 
   await db
     .from("students")
-    .update({ session_data: session })
+    .update({ session_data: safe })
     .eq("id", studentId);
 
-  for (const progress of Object.values(session.moduleProgress)) {
+  for (const progress of Object.values(safe.moduleProgress)) {
     await db.from("module_progress").upsert(
       {
         student_id: studentId,
@@ -243,7 +245,7 @@ export async function saveStudentSession(
     );
   }
 
-  for (const score of Object.values(session.gameScores)) {
+  for (const score of Object.values(safe.gameScores)) {
     await db.from("game_scores").upsert(
       {
         student_id: studentId,

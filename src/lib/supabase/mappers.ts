@@ -1,3 +1,4 @@
+import { normalizeStudentSession } from "@/lib/students/student-sessions";
 import type {
   BranchingStory,
   EmotionLog,
@@ -265,25 +266,19 @@ export function sessionFromDbRows(
     timestamp: row.created_at,
   }));
 
-  if (
-    Object.keys(moduleProgress).length === 0 &&
-    Object.keys(gameScores).length === 0 &&
-    emotionLogs.length === 0 &&
-    sessionData
-  ) {
-    return sessionData;
-  }
-
-  return {
+  const fromRows = {
     moduleProgress:
-      Object.keys(moduleProgress).length > 0
-        ? moduleProgress
-        : (sessionData?.moduleProgress ?? {}),
-    gameScores:
-      Object.keys(gameScores).length > 0
-        ? gameScores
-        : (sessionData?.gameScores ?? {}),
-    emotionLogs:
-      emotionLogs.length > 0 ? emotionLogs : (sessionData?.emotionLogs ?? []),
+      Object.keys(moduleProgress).length > 0 ? moduleProgress : undefined,
+    gameScores: Object.keys(gameScores).length > 0 ? gameScores : undefined,
+    emotionLogs: emotionLogs.length > 0 ? emotionLogs : undefined,
   };
+
+  const merged = {
+    moduleProgress:
+      fromRows.moduleProgress ?? sessionData?.moduleProgress ?? {},
+    gameScores: fromRows.gameScores ?? sessionData?.gameScores ?? {},
+    emotionLogs: fromRows.emotionLogs ?? sessionData?.emotionLogs ?? [],
+  };
+
+  return normalizeStudentSession(merged);
 }
