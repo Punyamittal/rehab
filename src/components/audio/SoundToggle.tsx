@@ -34,7 +34,7 @@ export function SoundToggle({ className }: { className?: string }) {
         type="button"
         onClick={() => setSoundEnabled(!soundEnabled)}
         className={cn(
-          "touch-target rounded-lg px-2.5 py-2 text-base transition-colors",
+          "touch-target rounded-lg px-2 py-1.5 text-sm transition-colors sm:px-2.5 sm:py-2 sm:text-base",
           soundEnabled ? "bg-primary/20 text-primary" : "opacity-50"
         )}
         title={soundEnabled ? t(language, "soundOn") : t(language, "soundOff")}
@@ -48,7 +48,7 @@ export function SoundToggle({ className }: { className?: string }) {
           type="button"
           onClick={() => setAutoNarrate(!autoNarrate)}
           className={cn(
-            "touch-target rounded-lg px-2 py-2 text-[11px] font-semibold transition-colors",
+            "touch-target rounded-lg px-2 py-1.5 text-[10px] font-semibold transition-colors sm:py-2 sm:text-[11px]",
             autoNarrate
               ? "bg-accent/40 text-foreground"
               : "text-muted hover:bg-white/80"
@@ -57,7 +57,7 @@ export function SoundToggle({ className }: { className?: string }) {
           aria-label={t(language, "autoRead")}
           aria-pressed={autoNarrate}
         >
-          {autoNarrate ? `▶ ${voiceLabel}` : "▶ Auto"}
+          {autoNarrate ? `▶ ${voiceLabel}` : "▶"}
         </button>
       )}
       {soundEnabled && (
@@ -65,7 +65,7 @@ export function SoundToggle({ className }: { className?: string }) {
           <button
             type="button"
             onClick={() => setNarrationRate(narrationRate - 0.05)}
-            className="touch-target rounded-lg px-2 py-2 text-xs font-medium text-muted hover:bg-white/80"
+            className="touch-target hidden rounded-lg px-2 py-2 text-xs font-medium text-muted hover:bg-white/80 sm:inline-flex"
             title="Slower narration"
             aria-label="Slower narration"
           >
@@ -74,7 +74,7 @@ export function SoundToggle({ className }: { className?: string }) {
           <button
             type="button"
             onClick={() => setNarrationRate(narrationRate + 0.05)}
-            className="touch-target rounded-lg px-2 py-2 text-xs font-medium text-muted hover:bg-white/80"
+            className="touch-target hidden rounded-lg px-2 py-2 text-xs font-medium text-muted hover:bg-white/80 sm:inline-flex"
             title="Faster narration"
             aria-label="Faster narration"
           >
@@ -85,7 +85,7 @@ export function SoundToggle({ className }: { className?: string }) {
             onClick={() => void replayLast()}
             disabled={!hasReplay || isSpeaking}
             className={cn(
-              "touch-target rounded-lg px-2 py-2 text-xs font-medium",
+              "touch-target hidden rounded-lg px-2 py-2 text-xs font-medium sm:inline-flex",
               hasReplay && !isSpeaking
                 ? "text-foreground hover:bg-white/80"
                 : "cursor-not-allowed text-muted/50"
