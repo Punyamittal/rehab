@@ -78,13 +78,13 @@ export default function LandingPage() {
           animate={{ opacity: 1, y: 0 }}
           className="w-full max-w-md text-center"
         >
-          <motion.span
-            className="mb-4 inline-block text-6xl"
-            animate={{ rotate: [0, 5, -5, 0] }}
+          <motion.img
+            src="/namaste.gif"
+            alt="Namaste"
+            className="mx-auto mb-4 h-24 w-32 rounded-2xl object-cover shadow-[0_8px_24px_rgba(74,55,40,0.16)] md:h-28 md:w-36"
+            animate={{ rotate: [0, 3, -3, 0] }}
             transition={{ duration: 4, repeat: Infinity }}
-          >
-            🌸
-          </motion.span>
+          />
           <h1 className="text-3xl font-bold text-primary md:text-4xl">
             {t(language, "appName")}
           </h1>

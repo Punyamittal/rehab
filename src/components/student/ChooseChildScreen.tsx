@@ -50,13 +50,13 @@ export function ChooseChildScreen() {
   const lastActive = managedStudents.find((row) => row.student.id === studentId);
 
   return (
-    <div className="flex min-h-screen flex-col bg-gradient-to-b from-primary/5 via-background to-secondary/10 px-4 py-8">
-      <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
-        <div className="mb-6 flex items-center justify-between gap-2">
+    <div className="min-h-screen bg-gradient-to-b from-primary/5 via-background to-secondary/10">
+      <header className="sticky top-0 z-30 border-b border-white/55 bg-gradient-to-r from-white/80 via-white/70 to-white/75 backdrop-blur-xl">
+        <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-2 px-3 py-2.5 md:px-5">
           {fromHome ? (
             <Link
               href="/home"
-              className="touch-target rounded-2xl bg-white/70 px-4 py-2 text-lg shadow-sm"
+              className="touch-target flex h-11 w-11 items-center justify-center rounded-xl border border-primary/15 bg-white/85 text-lg text-primary shadow-sm transition-colors hover:bg-white"
               aria-label={t(language, "back")}
             >
               ←
@@ -64,27 +64,35 @@ export function ChooseChildScreen() {
           ) : (
             <Link
               href="/"
-              className="touch-target rounded-2xl bg-white/70 px-4 py-2 text-lg shadow-sm"
+              className="touch-target flex h-11 w-11 items-center justify-center rounded-xl border border-primary/15 bg-white/85 text-lg text-primary shadow-sm transition-colors hover:bg-white"
               aria-label={t(language, "back")}
             >
               ←
             </Link>
           )}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 rounded-2xl border border-white/70 bg-white/55 p-1 shadow-[0_6px_22px_rgba(74,55,40,0.08)]">
             <LogoutButton variant="icon" />
             <SoundToggle />
             <LanguageSelector />
           </div>
         </div>
+      </header>
+
+      <div className="mx-auto flex w-full max-w-lg flex-1 flex-col px-4 py-8">
+        <div className="mb-2" />
 
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-center"
         >
-          <span className="text-5xl" aria-hidden>
-            👋
-          </span>
+          <motion.img
+            src="/run.gif"
+            alt="Running animation"
+            className="mx-auto h-24 w-32 rounded-2xl object-cover shadow-[0_8px_24px_rgba(74,55,40,0.16)] md:h-28 md:w-36"
+            animate={{ scale: [1, 1.06, 1], opacity: [0.95, 1, 0.95] }}
+            transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+          />
           <h1 className="mt-4 text-2xl font-bold text-primary md:text-3xl">
             {t(language, "chooseChildTitle")}
           </h1>
