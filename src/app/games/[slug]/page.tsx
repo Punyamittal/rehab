@@ -9,6 +9,7 @@ import { t } from "@/lib/i18n/translations";
 import { AppControls } from "@/components/layout/AppControls";
 import { CatalogLoader } from "@/components/ui/CatalogLoader";
 import { AppHeader } from "@/components/layout/AppHeader";
+import { externalGameText, getExternalGameBySlug } from "@/lib/games/external-games";
 
 export default function GamePage({
   params,
@@ -19,25 +20,30 @@ export default function GamePage({
   const language = useAppStore((s) => s.language);
   const getGameBySlug = useCatalogStore((s) => s.getGameBySlug);
 
-  if (slug === "toothstars") {
+  const externalGame = getExternalGameBySlug(slug);
+  if (externalGame) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-white to-primary/5">
-        <AppHeader showBack backHref="/games" title="ToothStars" />
+        <AppHeader
+          showBack
+          backHref="/games"
+          title={externalGameText(language, externalGame.titleHi, externalGame.titleEn)}
+        />
         <div className="mx-auto flex min-h-[70vh] max-w-2xl items-center px-4 py-8">
           <div className="w-full rounded-3xl border border-white/60 bg-white/85 p-6 text-center shadow-[var(--safe-shadow)] backdrop-blur-sm">
             <p className="text-lg font-semibold text-foreground">
-              ToothStars cannot be embedded here.
+              {externalGameText(language, externalGame.titleHi, externalGame.titleEn)} cannot be embedded here.
             </p>
             <p className="mt-2 text-sm text-muted">
               This website blocks iframe embedding. Open it in a new tab to play.
             </p>
             <a
-              href="https://toothstars.itch.io/game"
+              href={externalGame.url}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-5 inline-flex items-center justify-center rounded-2xl bg-primary px-5 py-3 font-medium text-white transition-colors hover:bg-primary-dark"
             >
-              Play ToothStars
+              {t(language, "playGame")} {externalGameText(language, externalGame.titleHi, externalGame.titleEn)}
             </a>
           </div>
         </div>

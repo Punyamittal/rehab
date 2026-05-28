@@ -19,7 +19,14 @@ import type { Language } from "@/types";
 import type { VoiceGender } from "@/lib/narration/voice-profiles";
 
 export function useNarration() {
-  const { language, soundEnabled } = useAppStore();
+  const {
+    language,
+    soundEnabled,
+    narrationRate,
+    setLastNarration,
+    lastNarrationText,
+    lastNarrationLanguage,
+  } = useAppStore();
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [voicesLoaded, setVoicesLoaded] = useState(false);
   const idRef = useRef(0);
@@ -42,11 +49,13 @@ export function useNarration() {
         ? buildNarrationScript(opts.title, opts.body ?? text)
         : text;
       const spokenScript = applySpokenOverrides(lang, script);
+      setLastNarration(spokenScript, lang);
 
       const id = ++idRef.current;
       await speakText(spokenScript, {
         language: lang,
         voiceGender: opts?.voiceGender,
+        rate: narrationRate,
         onStart: () => {
           if (id === idRef.current) setIsSpeaking(true);
         },
@@ -58,7 +67,7 @@ export function useNarration() {
         },
       });
     },
-    [language, soundEnabled]
+    [language, narrationRate, setLastNarration, soundEnabled]
   );
 
   const stop = useCallback(() => {
@@ -67,10 +76,18 @@ export function useNarration() {
     setIsSpeaking(false);
   }, []);
 
+  const replayLast = useCallback(async () => {
+    if (!lastNarrationText.trim() || !lastNarrationLanguage) return;
+    await speak(lastNarrationText, lastNarrationLanguage);
+  }, [lastNarrationLanguage, lastNarrationText, speak]);
+
   return {
     speak,
+    replayLast,
     stop,
     isSpeaking,
+    narrationRate,
+    hasReplay: Boolean(lastNarrationText.trim() && lastNarrationLanguage),
     soundEnabled,
     voicesLoaded,
     supported: isSpeechSupported(),
@@ -140,6 +157,8 @@ export function useSpeechThenAdvance({
   pauseAfterMs?: number;
 }) {
   const { autoNarrate, soundEnabled, language } = useAppStore();
+  const narrationRate = useAppStore((s) => s.narrationRate);
+  const setLastNarration = useAppStore((s) => s.setLastNarration);
   const onAdvanceRef = useRef(onAdvance);
   onAdvanceRef.current = onAdvance;
 
@@ -168,9 +187,11 @@ export function useSpeechThenAdvance({
       const startTimer = window.setTimeout(() => {
         if (cancelled) return;
         const spokenText = applySpokenOverrides(language, text);
+        setLastNarration(spokenText, language);
         void speakText(spokenText, {
           language,
           voiceGender,
+          rate: narrationRate,
           onEnd: () => {
             window.clearTimeout(fallbackTimer);
             fireAdvance();
@@ -200,8 +221,10 @@ export function useSpeechThenAdvance({
     autoNarrate,
     soundEnabled,
     language,
+    narrationRate,
     voiceGender,
     pauseAfterMs,
+    setLastNarration,
   ]);
 }
 

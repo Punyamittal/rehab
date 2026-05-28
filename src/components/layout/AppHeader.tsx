@@ -17,32 +17,39 @@ export function AppHeader({ showBack, backHref = "/", title }: AppHeaderProps) {
   const language = useAppStore((s) => s.language);
 
   return (
-    <header className="no-print sticky top-0 z-20 flex items-center justify-between gap-4 border-b border-white/50 bg-white/70 px-4 py-3 shadow-[0_4px_24px_rgba(74,55,40,0.06)] backdrop-blur-lg md:px-8">
-      <div className="flex items-center gap-3">
-        {showBack && (
-          <Link
-            href={backHref}
-            className="touch-target flex items-center justify-center rounded-2xl bg-white/70 px-3 text-lg"
-            aria-label={t(language, "back")}
-          >
-            ←
-          </Link>
-        )}
-        {title ? (
-          <h1 className="text-lg font-semibold md:text-xl">{title}</h1>
-        ) : (
-          <Link href="/" className="flex flex-col">
-            <span className="text-lg font-bold text-primary">
-              🌸 {t(language, "appName")}
-            </span>
-            <span className="text-xs text-muted">{t(language, "tagline")}</span>
-          </Link>
-        )}
-      </div>
-      <div className="flex items-center gap-2">
-        <LogoutButton variant="icon" />
-        <SoundToggle />
-        <LanguageSelector />
+    <header className="no-print sticky top-0 z-30 border-b border-white/55 bg-gradient-to-r from-white/80 via-white/70 to-white/75 backdrop-blur-xl">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-3 py-2.5 md:px-6">
+        <div className="flex min-w-0 items-center gap-2.5">
+          {showBack && (
+            <Link
+              href={backHref}
+              className="touch-target flex h-11 w-11 items-center justify-center rounded-xl border border-primary/15 bg-white/85 text-lg text-primary shadow-sm transition-colors hover:bg-white"
+              aria-label={t(language, "back")}
+            >
+              ←
+            </Link>
+          )}
+          {title ? (
+            <h1 className="truncate text-base font-semibold md:text-lg">{title}</h1>
+          ) : (
+            <Link
+              href="/"
+              className="flex min-w-0 flex-col rounded-xl px-1 py-0.5 transition-colors hover:bg-white/60"
+            >
+              <span className="truncate text-base font-bold text-primary md:text-lg">
+                🌸 {t(language, "appName")}
+              </span>
+              <span className="truncate text-[11px] text-muted md:text-xs">
+                {t(language, "tagline")}
+              </span>
+            </Link>
+          )}
+        </div>
+        <div className="flex items-center gap-1.5 rounded-2xl border border-white/70 bg-white/55 p-1 shadow-[0_6px_22px_rgba(74,55,40,0.08)]">
+          <LogoutButton variant="icon" />
+          <SoundToggle />
+          <LanguageSelector />
+        </div>
       </div>
     </header>
   );

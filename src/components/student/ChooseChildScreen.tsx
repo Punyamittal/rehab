@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -23,6 +23,7 @@ export function ChooseChildScreen() {
     managedStudents,
     selectStudentProfile,
   } = useAppStore();
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     if (role === null) router.replace("/");
@@ -37,6 +38,16 @@ export function ChooseChildScreen() {
     const ok = await selectStudentProfile(id);
     if (ok) router.push("/home");
   };
+
+  const filteredStudents = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return managedStudents;
+    return managedStudents.filter((row) =>
+      row.student.alias.toLowerCase().includes(q)
+    );
+  }, [managedStudents, query]);
+
+  const lastActive = managedStudents.find((row) => row.student.id === studentId);
 
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-b from-primary/5 via-background to-secondary/10 px-4 py-8">
@@ -80,6 +91,16 @@ export function ChooseChildScreen() {
           <p className="mt-2 text-muted">{t(language, "chooseChildHint")}</p>
         </motion.div>
 
+        {lastActive && (
+          <button
+            type="button"
+            onClick={() => handleSelect(lastActive.student.id)}
+            className="mt-5 rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-left text-sm font-medium text-primary hover:bg-primary/15"
+          >
+            ↺ Quick resume: {lastActive.student.avatarEmoji} {lastActive.student.alias}
+          </button>
+        )}
+
         {managedStudents.length === 0 ? (
           <motion.div
             initial={{ opacity: 0 }}
@@ -94,8 +115,16 @@ export function ChooseChildScreen() {
             </p>
           </motion.div>
         ) : (
-          <ul className="mt-8 flex flex-col gap-3">
-            {managedStudents.map((row, index) => {
+          <>
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search child"
+              className="mt-6 w-full rounded-2xl border border-primary/20 bg-white/90 px-4 py-3 text-sm outline-none ring-primary/30 focus:ring-2"
+            />
+            <ul className="mt-4 flex flex-col gap-3">
+            {filteredStudents.map((row, index) => {
               const { id, alias, avatarEmoji } = row.student;
               const isCurrent = id === studentId;
               return (
@@ -136,7 +165,8 @@ export function ChooseChildScreen() {
                 </motion.li>
               );
             })}
-          </ul>
+            </ul>
+          </>
         )}
       </div>
     </div>

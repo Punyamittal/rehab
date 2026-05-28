@@ -17,6 +17,22 @@ let lastEngine: "cloud" | "browser" | "none" = "none";
 
 let keepAliveInterval: ReturnType<typeof setInterval> | null = null;
 
+function applyPunjabiFallbackTransliteration(text: string): string {
+  // Hindi-friendly phonetics when Punjabi voice is unavailable.
+  return text
+    .replaceAll("ੱ", "")
+    .replaceAll("ں", "ं")
+    .replaceAll("ਅੱਜ", "अज्ज")
+    .replaceAll("ਸਿਖ", "सिख")
+    .replaceAll("ਚਾਹ", "चाह")
+    .replaceAll("ਦਾ", "दा")
+    .replaceAll("ਦੀ", "दी")
+    .replaceAll("ਤੇ", "ते")
+    .replaceAll("ਦੋਸਤਾਂ", "दोस्तां")
+    .replaceAll("ਸਫਾਈ", "सफाई")
+    .replaceAll("ਕਹਾਣ", "कहाण");
+}
+
 function startKeepAlive() {
   if (keepAliveInterval) return;
   keepAliveInterval = setInterval(() => {
@@ -326,14 +342,18 @@ export async function speakText(
   }
 
   stopSpeaking();
+  const paVoice = options.language === "pa" ? pickVoice("pa", options.voiceGender) : undefined;
+  const hasNativePaVoice = (paVoice?.lang?.toLowerCase() ?? "").startsWith("pa");
+  const preparedText =
+    options.language === "pa" && !hasNativePaVoice
+      ? applyPunjabiFallbackTransliteration(text)
+      : text;
 
   // Prefer browser voice first for Punjabi when a native pa voice exists locally.
   // This prevents immediate cloud fallback to Hindi voice for Punjabi UI text.
   if (options.language === "pa") {
-    const paVoice = pickVoice("pa", options.voiceGender);
-    const voiceLang = paVoice?.lang?.toLowerCase() ?? "";
-    if (voiceLang.startsWith("pa")) {
-      await speakViaBrowser(text, options);
+    if (hasNativePaVoice) {
+      await speakViaBrowser(preparedText, options);
       return;
     }
   }
@@ -343,11 +363,11 @@ export async function speakText(
     (navigator.onLine === undefined || navigator.onLine);
 
   if (useCloud) {
-    const ok = await speakViaCloud(text, options.language, options);
+    const ok = await speakViaCloud(preparedText, options.language, options);
     if (ok) return;
   }
 
-  await speakViaBrowser(text, options);
+  await speakViaBrowser(preparedText, options);
 }
 
 export function buildNarrationScript(

@@ -40,7 +40,7 @@ export function LanguageSelector({ className }: { className?: string }) {
     <div className={cn("flex flex-col items-end gap-1", className)}>
       <div
         ref={scrollRef}
-        className="flex max-w-[min(100vw-8rem,320px)] gap-1 overflow-x-auto rounded-2xl bg-white/70 p-1 shadow-sm scrollbar-thin"
+        className="flex max-w-[min(100vw-10rem,300px)] gap-1 overflow-x-auto rounded-xl border border-primary/10 bg-white/75 p-1 shadow-sm scrollbar-thin"
         role="listbox"
         aria-label={t(uiLocale, "selectLanguage")}
       >
@@ -52,7 +52,7 @@ export function LanguageSelector({ className }: { className?: string }) {
             aria-selected={language === opt.id}
             onClick={() => handleSelect(opt.id)}
             className={cn(
-              "touch-target shrink-0 rounded-xl px-3 py-2 text-sm font-medium transition-colors whitespace-nowrap",
+              "touch-target shrink-0 rounded-lg px-2.5 py-2 text-xs font-semibold transition-colors whitespace-nowrap",
               language === opt.id
                 ? "bg-primary text-white shadow-sm"
                 : "text-muted hover:bg-white/80"
@@ -63,7 +63,7 @@ export function LanguageSelector({ className }: { className?: string }) {
           </button>
         ))}
       </div>
-      <p className="max-w-[280px] text-right text-[10px] leading-tight text-muted">
+      <p className="max-w-[260px] text-right text-[10px] leading-tight text-muted">
         {current.nativeLabel} · ☁️ {getEdgeVoiceLabel(current.id)}
       </p>
       {current.usesSharedVoice && (

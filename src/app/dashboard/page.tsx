@@ -29,6 +29,8 @@ export default function FacilitatorDashboardPage() {
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [password, setPassword] = useState("");
   const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<"all" | "present" | "absent" | "low-progress">("all");
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     if (role !== "facilitator") {
@@ -43,6 +45,62 @@ export default function FacilitatorDashboardPage() {
 
   const presentCount = managedStudents.filter((s) => s.presentToday).length;
   const total = managedStudents.length;
+  const lowProgressCount = managedStudents.filter((s) => {
+    if (!s.totalModules) return false;
+    return s.modulesCompleted / s.totalModules < 0.3;
+  }).length;
+  const filteredRows = managedStudents.filter((row) => {
+    if (filter === "present" && !row.presentToday) return false;
+    if (filter === "absent" && row.presentToday) return false;
+    if (filter === "low-progress") {
+      if (!row.totalModules) return false;
+      if (row.modulesCompleted / row.totalModules >= 0.3) return false;
+    }
+    if (query.trim()) {
+      return row.student.alias.toLowerCase().includes(query.trim().toLowerCase());
+    }
+    return true;
+  });
+
+  const exportCsv = () => {
+    const header = [
+      "Name",
+      "Present",
+      "ModulesCompleted",
+      "TotalModules",
+      "AssessmentPoints",
+      "GamePoints",
+      "TotalPoints",
+      "PreEmotion",
+      "LastEmotion",
+      "Note",
+    ];
+    const lines = filteredRows.map((row) =>
+      [
+        row.student.alias,
+        row.presentToday ? "Yes" : "No",
+        row.modulesCompleted,
+        row.totalModules,
+        row.assessmentPoints ?? 0,
+        row.gamePoints ?? 0,
+        row.totalPoints ?? 0,
+        row.preEmotion ?? "",
+        row.lastEmotion ?? "",
+        (row.note ?? "").replaceAll('"', '""'),
+      ]
+        .map((value) => `"${String(value)}"`)
+        .join(",")
+    );
+    const blob = new Blob([[header.join(","), ...lines].join("\n")], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `facilitator-report-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const handlePrint = () => {
     if (typeof window !== "undefined") window.print();
@@ -126,6 +184,13 @@ export default function FacilitatorDashboardPage() {
               {presentCount}/{total}
             </p>
           </div>
+          <div className="rounded-3xl bg-white/70 px-6 py-4">
+            <p className="text-sm text-muted">Weekly summary</p>
+            <p className="text-sm font-semibold">
+              Low progress: {lowProgressCount} · Avg attendance:{" "}
+              {total ? Math.round((presentCount / total) * 100) : 0}%
+            </p>
+          </div>
           <div className="flex gap-3">
             <Button
               variant="secondary"
@@ -143,7 +208,32 @@ export default function FacilitatorDashboardPage() {
             <Button variant="outline" onClick={handlePrint}>
               📄 {t(language, "printReport")}
             </Button>
+            <Button variant="outline" onClick={exportCsv}>
+              ⬇ Export CSV
+            </Button>
           </div>
+        </div>
+
+        <div className="no-print mb-4 flex flex-wrap gap-2">
+          {(["all", "present", "absent", "low-progress"] as const).map((opt) => (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => setFilter(opt)}
+              className={`rounded-xl px-3 py-2 text-sm ${
+                filter === opt ? "bg-primary text-white" : "bg-white/70 text-foreground"
+              }`}
+            >
+              {opt}
+            </button>
+          ))}
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search child"
+            className="rounded-xl border border-primary/20 bg-white px-3 py-2 text-sm outline-none"
+          />
         </div>
 
         {studentsError && (
@@ -172,7 +262,7 @@ export default function FacilitatorDashboardPage() {
         )}
 
         <FacilitatorTable
-          rows={managedStudents}
+          rows={filteredRows}
           onToggleAttendance={toggleStudentAttendance}
           onRequestDelete={handleDeleteFromTable}
           onUpdateNote={updateManagedStudentNote}

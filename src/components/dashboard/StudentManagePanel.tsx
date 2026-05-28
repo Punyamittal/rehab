@@ -23,6 +23,11 @@ export function StudentManagePanel() {
   const [error, setError] = useState<string | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
+  const [scheduledDelete, setScheduledDelete] = useState<{
+    id: string;
+    alias: string;
+    timer: ReturnType<typeof setTimeout>;
+  } | null>(null);
 
   const handleAdd = async () => {
     const trimmed = alias.trim();
@@ -58,12 +63,18 @@ export function StudentManagePanel() {
   };
 
   const confirmDelete = async (studentId: string) => {
-    try {
-      await removeManagedStudent(studentId);
-      setPendingDeleteId(null);
-    } catch {
-      setPendingDeleteId(null);
-    }
+    const target = managedStudents.find((r) => r.student.id === studentId);
+    if (!target) return;
+    if (scheduledDelete?.timer) clearTimeout(scheduledDelete.timer);
+    const timer = setTimeout(async () => {
+      try {
+        await removeManagedStudent(studentId);
+      } finally {
+        setScheduledDelete(null);
+      }
+    }, 5000);
+    setScheduledDelete({ id: studentId, alias: target.student.alias, timer });
+    setPendingDeleteId(null);
   };
 
   return (
@@ -137,6 +148,23 @@ export function StudentManagePanel() {
         <p className="mt-2 text-sm font-medium text-red-700" role="alert">
           {error}
         </p>
+      )}
+      {scheduledDelete && (
+        <div className="mt-3 flex items-center justify-between rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm">
+          <span>
+            {scheduledDelete.alias} will be removed in 5s.
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              clearTimeout(scheduledDelete.timer);
+              setScheduledDelete(null);
+            }}
+            className="font-semibold text-primary underline"
+          >
+            Restore
+          </button>
+        </div>
       )}
 
       {managedStudents.length === 0 ? (

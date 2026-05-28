@@ -40,6 +40,9 @@ interface AppState {
   studentProfileChosen: boolean;
   soundEnabled: boolean;
   autoNarrate: boolean;
+  narrationRate: number;
+  lastNarrationText: string;
+  lastNarrationLanguage: Language | null;
   moduleProgress: Record<string, ModuleProgress>;
   emotionLogs: EmotionLog[];
   gameScores: Record<string, GameScore>;
@@ -58,6 +61,8 @@ interface AppState {
   isManagedStudent: (studentId: string) => boolean;
   setSoundEnabled: (enabled: boolean) => void;
   setAutoNarrate: (enabled: boolean) => void;
+  setNarrationRate: (rate: number) => void;
+  setLastNarration: (text: string, language: Language) => void;
   loadManagedStudents: () => Promise<void>;
   updateModuleProgress: (progress: ModuleProgress) => void;
   addEmotionLog: (log: Omit<EmotionLog, "timestamp">) => void;
@@ -124,6 +129,9 @@ export const useAppStore = create<AppState>()(
       studentProfileChosen: false,
       soundEnabled: true,
       autoNarrate: false,
+      narrationRate: 0.95,
+      lastNarrationText: "",
+      lastNarrationLanguage: null,
       moduleProgress: {},
       emotionLogs: [],
       gameScores: {},
@@ -135,6 +143,12 @@ export const useAppStore = create<AppState>()(
       setLanguage: (language) => set({ language }),
       setSoundEnabled: (soundEnabled) => set({ soundEnabled }),
       setAutoNarrate: (autoNarrate) => set({ autoNarrate }),
+      setNarrationRate: (narrationRate) =>
+        set({
+          narrationRate: Math.max(0.7, Math.min(1.2, narrationRate)),
+        }),
+      setLastNarration: (lastNarrationText, lastNarrationLanguage) =>
+        set({ lastNarrationText, lastNarrationLanguage }),
 
       loadManagedStudents: async () => {
         if (!isSupabaseConfigured()) return;
@@ -434,6 +448,9 @@ export const useAppStore = create<AppState>()(
         studentProfileChosen: state.studentProfileChosen,
         soundEnabled: state.soundEnabled,
         autoNarrate: state.autoNarrate,
+        narrationRate: state.narrationRate,
+        lastNarrationText: state.lastNarrationText,
+        lastNarrationLanguage: state.lastNarrationLanguage,
       }),
       merge: (persisted, current) => ({
         ...current,
