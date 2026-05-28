@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { EMOTION_OPTIONS } from "@/data/emotions";
 import { useAppStore } from "@/stores/app-store";
@@ -13,6 +13,8 @@ import {
 import { Button } from "@/components/ui/Button";
 import { AppControls } from "@/components/layout/AppControls";
 import { NarrationButton } from "@/components/audio/NarrationButton";
+import { VoiceInputButton } from "@/components/audio/VoiceInputButton";
+import { estimateDwellMs } from "@/lib/narration/story-timing";
 import { localized } from "@/lib/i18n/content";
 import type { CheckType, EmotionType } from "@/types";
 
@@ -29,6 +31,7 @@ export function EmotionCheckIn({
 }: EmotionCheckInProps) {
   const { language, addEmotionLog } = useAppStore();
   const [selected, setSelected] = useState<EmotionType | null>(null);
+  const [autoListenTick, setAutoListenTick] = useState(0);
 
   const subtitle =
     checkType === "pre" ? t(language, "beforeModule") : t(language, "afterModule");
@@ -53,11 +56,31 @@ export function EmotionCheckIn({
     { force: true }
   );
 
+  useEffect(() => {
+    const timer = window.setTimeout(
+      () => setAutoListenTick((n) => n + 1),
+      estimateDwellMs(fullPrompt, true) + 700
+    );
+    return () => window.clearTimeout(timer);
+  }, [checkType, fullPrompt, language, moduleId]);
+
+  const completeWithEmotion = (emotion: EmotionType) => {
+    addEmotionLog({ emotion, checkType, moduleId });
+    onComplete(emotion);
+  };
+
   const handleContinue = () => {
     if (!selected) return;
-    addEmotionLog({ emotion: selected, checkType, moduleId });
-    onComplete(selected);
+    completeWithEmotion(selected);
   };
+
+  useEffect(() => {
+    if (!selected) return;
+    const timer = window.setTimeout(() => {
+      completeWithEmotion(selected);
+    }, 700);
+    return () => window.clearTimeout(timer);
+  }, [selected]);
 
   return (
     <motion.div
@@ -73,7 +96,25 @@ export function EmotionCheckIn({
         <h2 className="text-center text-2xl font-semibold md:text-3xl">
           {prompt}
         </h2>
-        <NarrationButton text={fullPrompt} size="sm" />
+        <div className="flex items-center gap-2">
+          <NarrationButton text={fullPrompt} size="sm" />
+          <VoiceInputButton
+            language={language}
+            autoStartKey={`emotion-${checkType}-${moduleId ?? "standalone"}-${autoListenTick}`}
+            onResult={(transcript) => {
+              const heard = transcript.toLowerCase().trim();
+              const matched = EMOTION_OPTIONS.find((opt) => {
+                const hi = opt.labelHi.toLowerCase();
+                const en = opt.labelEn.toLowerCase();
+                return hi.includes(heard) || en.includes(heard) || heard.includes(hi) || heard.includes(en);
+              });
+              if (matched) {
+                setSelected(matched.id);
+                window.setTimeout(() => completeWithEmotion(matched.id), 500);
+              }
+            }}
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-4 sm:grid-cols-6">

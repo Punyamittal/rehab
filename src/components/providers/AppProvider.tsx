@@ -5,6 +5,7 @@ import { loadVoices, isSpeechSupported } from "@/lib/narration/speech";
 import { HtmlLangSync } from "@/components/providers/HtmlLangSync";
 import { StudentPathGuard } from "@/components/student/StudentPathGuard";
 import { useSupabaseBootstrap } from "@/hooks/useSupabaseBootstrap";
+import { VoiceNavigator } from "@/components/providers/VoiceNavigator";
 
 function SupabaseBootstrap() {
   useSupabaseBootstrap();
@@ -34,6 +35,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       <HtmlLangSync />
       <SupabaseBootstrap />
       <StudentPathGuard />
+      <VoiceNavigator />
       {children}
     </>
   );

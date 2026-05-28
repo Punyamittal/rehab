@@ -9,7 +9,10 @@ import { t } from "@/lib/i18n/translations";
 import { LanguageSelector } from "@/components/ui/LanguageSelector";
 import { SoundToggle } from "@/components/audio/SoundToggle";
 import { LogoutButton } from "@/components/auth/LogoutButton";
+import { VoiceInputButton } from "@/components/audio/VoiceInputButton";
+import { useAutoNarrate } from "@/hooks/useNarration";
 import { cn } from "@/lib/utils";
+import { estimateDwellMs } from "@/lib/narration/story-timing";
 
 export function ChooseChildScreen() {
   const router = useRouter();
@@ -24,20 +27,176 @@ export function ChooseChildScreen() {
     selectStudentProfile,
   } = useAppStore();
   const [query, setQuery] = useState("");
+  const [heardName, setHeardName] = useState("");
+  const [voiceLoginBusy, setVoiceLoginBusy] = useState(false);
 
   useEffect(() => {
     if (role === null) router.replace("/");
     else if (role !== "student") router.replace("/");
   }, [role, router]);
 
-  if (role !== "student") {
-    return null;
-  }
-
   const handleSelect = async (id: string) => {
     const ok = await selectStudentProfile(id);
     if (ok) router.push("/home");
   };
+
+  const normalize = (text: string) =>
+    text.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, "").trim();
+
+  const devanagariToLatin = (text: string) => {
+    const pairs: Array<[string, string]> = [
+      ["अ", "a"], ["आ", "aa"], ["इ", "i"], ["ई", "ee"], ["उ", "u"], ["ऊ", "oo"],
+      ["ए", "e"], ["ऐ", "ai"], ["ओ", "o"], ["औ", "au"], ["क", "k"], ["ख", "kh"],
+      ["ग", "g"], ["घ", "gh"], ["च", "ch"], ["छ", "chh"], ["ज", "j"], ["झ", "jh"],
+      ["ट", "t"], ["ठ", "th"], ["ड", "d"], ["ढ", "dh"], ["त", "t"], ["थ", "th"],
+      ["द", "d"], ["ध", "dh"], ["न", "n"], ["प", "p"], ["फ", "f"], ["ब", "b"],
+      ["भ", "bh"], ["म", "m"], ["य", "y"], ["र", "r"], ["ल", "l"], ["व", "v"],
+      ["स", "s"], ["श", "sh"], ["ह", "h"], ["ण", "n"], ["ं", "n"], ["्", ""],
+      ["ा", "a"], ["ि", "i"], ["ी", "ee"], ["ु", "u"], ["ू", "oo"], ["े", "e"],
+      ["ै", "ai"], ["ो", "o"], ["ौ", "au"],
+    ];
+    let output = text;
+    for (const [from, to] of pairs) {
+      output = output.split(from).join(to);
+    }
+    return output;
+  };
+
+  const phoneticKey = (text: string) =>
+    normalize(text)
+      .replace(/[aeiouअआइईउऊएऐओऔ]/g, "")
+      .replace(/ph/g, "f")
+      .replace(/sh/g, "s")
+      .replace(/ch/g, "c")
+      .replace(/j/g, "z")
+      .replace(/\s+/g, "");
+
+  const levenshtein = (a: string, b: string): number => {
+    const m = a.length;
+    const n = b.length;
+    const dp = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+    for (let i = 0; i <= m; i++) dp[i][0] = i;
+    for (let j = 0; j <= n; j++) dp[0][j] = j;
+    for (let i = 1; i <= m; i++) {
+      for (let j = 1; j <= n; j++) {
+        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+        dp[i][j] = Math.min(
+          dp[i - 1][j] + 1,
+          dp[i][j - 1] + 1,
+          dp[i - 1][j - 1] + cost
+        );
+      }
+    }
+    return dp[m][n];
+  };
+
+  const handleVoiceName = (transcript: string) => {
+    if (voiceLoginBusy || managedStudents.length === 0) return;
+    const heard = normalize(transcript);
+    setHeardName(transcript);
+    if (!heard) return;
+    const scored = managedStudents
+      .map((row) => {
+        const alias = normalize(row.student.alias);
+        const heardLatin = normalize(devanagariToLatin(heard));
+        const aliasLatin = normalize(devanagariToLatin(alias));
+        const aliasFirst = alias.split(/\s+/)[0] ?? alias;
+        const heardFirst = heard.split(/\s+/)[0] ?? heard;
+        let score = 0;
+
+        if (heard === alias) score += 100;
+        if (heard.includes(alias) || alias.includes(heard)) score += 70;
+        if (
+          heardFirst === aliasFirst ||
+          heardFirst.includes(aliasFirst) ||
+          aliasFirst.includes(heardFirst)
+        ) {
+          score += 60;
+        }
+
+        const heardTokens = heard.split(/\s+/).filter(Boolean);
+        const aliasTokens = alias.split(/\s+/).filter(Boolean);
+        const tokenMatch = heardTokens.some((ht) =>
+          aliasTokens.some(
+            (at) => at.includes(ht) || ht.includes(at) || levenshtein(ht, at) <= 1
+          )
+        );
+        if (tokenMatch) score += 40;
+
+        if (levenshtein(heard, alias) <= 2) score += 30;
+        if (
+          heardLatin === aliasLatin ||
+          heardLatin.includes(aliasLatin) ||
+          aliasLatin.includes(heardLatin)
+        ) {
+          score += 55;
+        }
+        if (levenshtein(heardLatin, aliasLatin) <= 2) score += 35;
+
+        const phoneticMatch =
+          phoneticKey(heard) === phoneticKey(alias) ||
+          phoneticKey(heardFirst) === phoneticKey(aliasFirst);
+        if (phoneticMatch) score += 25;
+
+        return { row, score };
+      })
+      .sort((a, b) => b.score - a.score);
+
+    const best = scored[0];
+    if (best && (best.score >= 10 || managedStudents.length === 1)) {
+      setVoiceLoginBusy(true);
+      void handleSelect(best.row.student.id).finally(() => {
+        setVoiceLoginBusy(false);
+      });
+      return;
+    }
+
+    const match = managedStudents.find((row) => {
+      const alias = normalize(row.student.alias);
+      const aliasFirst = alias.split(/\s+/)[0] ?? alias;
+      const heardFirst = heard.split(/\s+/)[0] ?? heard;
+      if (heard === alias || heard.includes(alias) || alias.includes(heard)) {
+        return true;
+      }
+      if (
+        heardFirst === aliasFirst ||
+        heardFirst.includes(aliasFirst) ||
+        aliasFirst.includes(heardFirst)
+      ) {
+        return true;
+      }
+      const heardTokens = heard.split(/\s+/).filter(Boolean);
+      const aliasTokens = alias.split(/\s+/).filter(Boolean);
+      const tokenMatch = heardTokens.some((ht) =>
+        aliasTokens.some(
+          (at) => at.includes(ht) || ht.includes(at) || levenshtein(ht, at) <= 1
+        )
+      );
+      const phoneticMatch =
+        phoneticKey(heard) === phoneticKey(alias) ||
+        phoneticKey(heardFirst) === phoneticKey(aliasFirst);
+      return tokenMatch || levenshtein(heard, alias) <= 2 || phoneticMatch;
+    });
+    if (match) {
+      setVoiceLoginBusy(true);
+      void handleSelect(match.student.id).finally(() => {
+        setVoiceLoginBusy(false);
+      });
+    }
+  };
+
+  const askNamePrompt = `${t(language, "chooseChildTitle")}. ${t(
+    language,
+    "chooseChildHint"
+  )}. ${t(language, "askFacilitator")}.`;
+
+  useAutoNarrate(
+    `choose-student-ask-name-${language}-${managedStudents.length}`,
+    askNamePrompt,
+    undefined,
+    undefined,
+    { force: true }
+  );
 
   const filteredStudents = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -48,6 +207,10 @@ export function ChooseChildScreen() {
   }, [managedStudents, query]);
 
   const lastActive = managedStudents.find((row) => row.student.id === studentId);
+
+  if (role !== "student") {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary/5 via-background to-secondary/10">
@@ -97,6 +260,20 @@ export function ChooseChildScreen() {
             {t(language, "chooseChildTitle")}
           </h1>
           <p className="mt-2 text-muted">{t(language, "chooseChildHint")}</p>
+          <div className="mt-3 flex justify-center">
+            <VoiceInputButton
+              language={language}
+              autoStartKey={`choose-student-${managedStudents.length}-${studentId || "none"}`}
+              autoStartDelayMs={estimateDwellMs(askNamePrompt, true) + 700}
+              onResult={handleVoiceName}
+            />
+          </div>
+          {heardName && (
+            <p className="mt-2 text-xs text-muted">
+              Heard: {heardName}
+              {voiceLoginBusy ? " · logging in..." : ""}
+            </p>
+          )}
         </motion.div>
 
         {lastActive && (

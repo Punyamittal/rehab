@@ -1,11 +1,19 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useCatalogStore } from "@/stores/catalog-store";
+import { PencilLoader } from "@/components/ui/PencilLoader";
 
 export function CatalogLoader({ children }: { children: React.ReactNode }) {
   const isLoading = useCatalogStore((s) => s.isLoading);
   const isReady = useCatalogStore((s) => s.isReady);
   const error = useCatalogStore((s) => s.error);
+  const [minDelayDone, setMinDelayDone] = useState(false);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setMinDelayDone(true), 3000);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   if (error) {
     return (
@@ -18,10 +26,10 @@ export function CatalogLoader({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!isReady && isLoading) {
+  if (!minDelayDone || (!isReady && isLoading)) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <div className="h-12 w-12 animate-pulse rounded-full bg-primary/30" />
+        <PencilLoader />
       </div>
     );
   }

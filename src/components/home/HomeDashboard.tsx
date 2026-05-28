@@ -17,6 +17,7 @@ import { VoiceDiagnostics } from "@/components/audio/VoiceDiagnostics";
 import { NarrationButton } from "@/components/audio/NarrationButton";
 import { QUICK_NAV, TOPIC_ACCENT } from "@/components/home/home-ui";
 import type { Language } from "@/types";
+import { useAutoNarrate } from "@/hooks/useNarration";
 
 const stagger = {
   hidden: { opacity: 0, y: 14 },
@@ -52,6 +53,18 @@ export function HomeDashboard() {
   const completed = getCompletedModuleCount();
   const total = modules.length;
   const progressPercent = getProgressPercent(completed, total || 1);
+  const homeIntroNarration = `${t(spokenLanguage, "greeting")} ${studentAlias}. ${t(
+    spokenLanguage,
+    "whatLearnToday"
+  )} ${t(spokenLanguage, "yourProgress")}: ${completed}/${total}.`;
+
+  useAutoNarrate(
+    `home-intro-${language}-${studentIdSafe(studentAlias)}-${completed}-${total}`,
+    homeIntroNarration,
+    undefined,
+    undefined,
+    { force: true }
+  );
 
   return (
     <CatalogLoader>
@@ -435,6 +448,10 @@ export function HomeDashboard() {
       </div>
     </CatalogLoader>
   );
+}
+
+function studentIdSafe(value: string): string {
+  return value.replace(/\s+/g, "-").toLowerCase();
 }
 
 function SectionHeader({

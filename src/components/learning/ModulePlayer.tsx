@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { LearningModule, ModuleSlide } from "@/types";
 import { useAppStore } from "@/stores/app-store";
@@ -11,6 +11,7 @@ import { Card } from "@/components/ui/Card";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { AmbientBackground } from "@/components/ambient/AmbientBackground";
 import { NarrationButton } from "@/components/audio/NarrationButton";
+import { VoiceInputButton } from "@/components/audio/VoiceInputButton";
 import { AppControls } from "@/components/layout/AppControls";
 import { buildNarrationScript } from "@/lib/narration/speech";
 import { buildChoicesNarration } from "@/lib/narration/question-narration";
@@ -38,8 +39,10 @@ export function ModulePlayer({ module, onComplete, onExit }: ModulePlayerProps) 
   const progress = ((slideIndex + 1) / total) * 100;
 
   const title = localized(language, module.titleHi, module.titleEn);
+  const slideTitle = localized(language, slide.titleHi, slide.titleEn);
+  const slideBody = localized(language, slide.bodyHi, slide.bodyEn);
 
-  const goNext = () => {
+  const goNext = useCallback(() => {
     stop();
     setQuizFeedback(null);
     setSelectedChoice(null);
@@ -58,7 +61,7 @@ export function ModulePlayer({ module, onComplete, onExit }: ModulePlayerProps) 
       });
       onComplete();
     }
-  };
+  }, [module.id, onComplete, slideIndex, stop, total, updateModuleProgress]);
 
   const handleQuizChoice = (choiceId: string, correct?: boolean) => {
     setSelectedChoice(choiceId);
@@ -75,6 +78,26 @@ export function ModulePlayer({ module, onComplete, onExit }: ModulePlayerProps) 
     slide.type !== "quiz" ||
     quizFeedback === "correct" ||
     (slide.choices?.some((c) => c.id === selectedChoice && c.correct) ?? false);
+
+  useEffect(() => {
+    if (slide.type !== "quiz" || quizFeedback !== "correct") return;
+    const timer = window.setTimeout(() => {
+      goNext();
+    }, 1200);
+    return () => window.clearTimeout(timer);
+  }, [goNext, quizFeedback, slide.type]);
+
+  useEffect(() => {
+    if (slide.type !== "content") return;
+    const narrationMs = estimateDwellMs(
+      buildNarrationScript(slideTitle, slideBody),
+      true
+    );
+    const timer = window.setTimeout(() => {
+      goNext();
+    }, 450 + narrationMs + 3000);
+    return () => window.clearTimeout(timer);
+  }, [goNext, slide.id, slide.type, slideBody, slideTitle]);
 
   return (
     <div className="relative min-h-screen pb-24">
@@ -178,13 +201,16 @@ function SlideContent({
         )
       : "";
   const narrationText = buildNarrationScript(title, body, choicesPart);
+  const [autoListenTick, setAutoListenTick] = useState(0);
+  const normalize = (text: string) =>
+    text.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, "").trim();
 
   useAutoNarrate(
     `${slideKey}-${language}`,
     narrationText,
     undefined,
     undefined,
-    { force: slide.type === "quiz" }
+    { force: true }
   );
 
   useEffect(() => {
@@ -212,6 +238,18 @@ function SlideContent({
     };
   }, [body, choiceLabels, shouldAutoNarrate, slideKey, title]);
 
+  useEffect(() => {
+    if (slide.type !== "quiz" || !slide.choices?.length) return;
+    const delayMs = shouldAutoNarrate
+      ? estimateDwellMs(narrationText, true) + 700
+      : 450;
+    const timer = window.setTimeout(
+      () => setAutoListenTick((n) => n + 1),
+      delayMs
+    );
+    return () => window.clearTimeout(timer);
+  }, [narrationText, shouldAutoNarrate, slide.choices, slide.type, slideKey]);
+
   return (
     <Card className="min-h-[280px]">
       <div className="mb-4 flex items-start justify-between gap-4">
@@ -222,7 +260,26 @@ function SlideContent({
         >
           {title}
         </h2>
-        <NarrationButton text={narrationText} />
+        <div className="flex items-center gap-2">
+          <NarrationButton text={narrationText} />
+          {slide.type === "quiz" && slide.choices && (
+            <VoiceInputButton
+              language={language}
+              autoStartKey={`${slideKey}-${autoListenTick}`}
+              onResult={(transcript) => {
+                const heard = normalize(transcript);
+                const match = slide.choices?.find((choice) =>
+                  normalize(localized(language, choice.labelHi, choice.labelEn)).includes(
+                    heard
+                  ) || heard.includes(
+                    normalize(localized(language, choice.labelHi, choice.labelEn))
+                  )
+                );
+                if (match) onChoice(match.id, match.correct);
+              }}
+            />
+          )}
+        </div>
       </div>
 
       <p
