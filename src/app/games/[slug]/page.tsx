@@ -23,19 +23,22 @@ export default function GamePage({
     return (
       <div className="min-h-screen bg-gradient-to-b from-white to-primary/5">
         <AppHeader showBack backHref="/games" title="ToothStars" />
-        <div className="mx-auto max-w-6xl px-4 pb-6 pt-4">
-          <div className="mb-3 rounded-2xl border border-primary/15 bg-white/80 px-4 py-3 text-sm text-muted">
-            External educational game (opens inside the app).
-          </div>
-          <div className="overflow-hidden rounded-3xl border border-white/60 bg-white shadow-[var(--safe-shadow)]">
-            <iframe
-              src="https://toothstars.itch.io/game"
-              title="ToothStars"
-              className="h-[78vh] w-full"
-              allow="fullscreen; autoplay"
-              loading="lazy"
-              referrerPolicy="strict-origin-when-cross-origin"
-            />
+        <div className="mx-auto flex min-h-[70vh] max-w-2xl items-center px-4 py-8">
+          <div className="w-full rounded-3xl border border-white/60 bg-white/85 p-6 text-center shadow-[var(--safe-shadow)] backdrop-blur-sm">
+            <p className="text-lg font-semibold text-foreground">
+              ToothStars cannot be embedded here.
+            </p>
+            <p className="mt-2 text-sm text-muted">
+              This website blocks iframe embedding. Open it in a new tab to play.
+            </p>
+            <a
+              href="https://toothstars.itch.io/game"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-5 inline-flex items-center justify-center rounded-2xl bg-primary px-5 py-3 font-medium text-white transition-colors hover:bg-primary-dark"
+            >
+              Play ToothStars
+            </a>
           </div>
         </div>
       </div>
