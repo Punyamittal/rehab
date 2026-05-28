@@ -29,6 +29,7 @@ export function ChooseChildScreen() {
   const [query, setQuery] = useState("");
   const [heardName, setHeardName] = useState("");
   const [voiceLoginBusy, setVoiceLoginBusy] = useState(false);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
 
   useEffect(() => {
     if (role === null) router.replace("/");
@@ -94,6 +95,7 @@ export function ChooseChildScreen() {
     if (voiceLoginBusy || managedStudents.length === 0) return;
     const heard = normalize(transcript);
     setHeardName(transcript);
+    setVoiceError(null);
     if (!heard) return;
     const scored = managedStudents
       .map((row) => {
@@ -143,46 +145,24 @@ export function ChooseChildScreen() {
       .sort((a, b) => b.score - a.score);
 
     const best = scored[0];
-    if (best && (best.score >= 10 || managedStudents.length === 1)) {
+    const bestAlias = best ? normalize(best.row.student.alias) : "";
+    const bestAliasFirst = bestAlias.split(/\s+/)[0] ?? bestAlias;
+    const heardFirst = heard.split(/\s+/)[0] ?? heard;
+    const strongFirstNameMatch =
+      bestAliasFirst.length > 0 &&
+      (heardFirst === bestAliasFirst ||
+        heardFirst.includes(bestAliasFirst) ||
+        bestAliasFirst.includes(heardFirst) ||
+        levenshtein(heardFirst, bestAliasFirst) <= 1);
+
+    if (best && (best.score >= 28 || strongFirstNameMatch)) {
       setVoiceLoginBusy(true);
       void handleSelect(best.row.student.id).finally(() => {
         setVoiceLoginBusy(false);
       });
       return;
     }
-
-    const match = managedStudents.find((row) => {
-      const alias = normalize(row.student.alias);
-      const aliasFirst = alias.split(/\s+/)[0] ?? alias;
-      const heardFirst = heard.split(/\s+/)[0] ?? heard;
-      if (heard === alias || heard.includes(alias) || alias.includes(heard)) {
-        return true;
-      }
-      if (
-        heardFirst === aliasFirst ||
-        heardFirst.includes(aliasFirst) ||
-        aliasFirst.includes(heardFirst)
-      ) {
-        return true;
-      }
-      const heardTokens = heard.split(/\s+/).filter(Boolean);
-      const aliasTokens = alias.split(/\s+/).filter(Boolean);
-      const tokenMatch = heardTokens.some((ht) =>
-        aliasTokens.some(
-          (at) => at.includes(ht) || ht.includes(at) || levenshtein(ht, at) <= 1
-        )
-      );
-      const phoneticMatch =
-        phoneticKey(heard) === phoneticKey(alias) ||
-        phoneticKey(heardFirst) === phoneticKey(aliasFirst);
-      return tokenMatch || levenshtein(heard, alias) <= 2 || phoneticMatch;
-    });
-    if (match) {
-      setVoiceLoginBusy(true);
-      void handleSelect(match.student.id).finally(() => {
-        setVoiceLoginBusy(false);
-      });
-    }
+    setVoiceError("Name not found. Please try again.");
   };
 
   const askNamePrompt = `${t(language, "chooseChildTitle")}. ${t(
@@ -273,6 +253,9 @@ export function ChooseChildScreen() {
               Heard: {heardName}
               {voiceLoginBusy ? " · logging in..." : ""}
             </p>
+          )}
+          {voiceError && (
+            <p className="mt-1 text-xs font-medium text-red-700">{voiceError}</p>
           )}
         </motion.div>
 
