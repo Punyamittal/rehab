@@ -56,7 +56,9 @@ export function HomeDashboard() {
   return (
     <CatalogLoader>
       <AppHeader />
-      <div className="mx-auto max-w-4xl px-4 pb-10 pt-4 md:px-8 md:pt-6">
+      <div className="mx-auto w-full max-w-6xl px-4 pb-10 pt-4 md:px-6 md:pt-6">
+        <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_220px] lg:gap-6 xl:grid-cols-[minmax(0,1fr)_250px]">
+          <div className="min-w-0">
         {/* Hero */}
         <motion.section
           custom={0}
@@ -415,6 +417,18 @@ export function HomeDashboard() {
 
         <div className="mt-6 flex justify-center">
           <LogoutButton />
+        </div>
+          </div>
+
+          <aside className="flex items-start justify-center lg:sticky lg:top-24 lg:self-start">
+            <div className="monkey-float rounded-3xl border border-white/50 bg-white/35 p-3 shadow-[0_12px_30px_rgba(74,55,40,0.18)] backdrop-blur-sm">
+              <img
+                src="/MEDMON.gif"
+                alt="Friendly monkey mascot"
+                className="h-36 w-28 rounded-2xl object-contain sm:h-40 sm:w-32 lg:h-52 lg:w-40 xl:h-60 xl:w-44"
+              />
+            </div>
+          </aside>
         </div>
       </div>
     </CatalogLoader>

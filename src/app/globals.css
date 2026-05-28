@@ -75,3 +75,24 @@ a[role="button"],
     transition-duration: 0.01ms !important;
   }
 }
+
+@keyframes monkeyFloat {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.monkey-float {
+  animation: monkeyFloat 3.8s ease-in-out infinite;
+  transition: transform 200ms ease;
+}
+
+.monkey-float:hover {
+  transform: translateY(-2px);
+}
