@@ -48,11 +48,45 @@ function hasAny(text: string, patterns: RegExp[]): boolean {
   return patterns.some((pattern) => pattern.test(text));
 }
 
+function levenshtein(a: string, b: string): number {
+  const m = a.length;
+  const n = b.length;
+  const dp = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      dp[i][j] = Math.min(
+        dp[i - 1][j] + 1,
+        dp[i][j - 1] + 1,
+        dp[i - 1][j - 1] + cost
+      );
+    }
+  }
+  return dp[m][n];
+}
+
+function fuzzyHasToken(text: string, tokens: string[]): boolean {
+  const words = text.split(/\s+/).filter(Boolean);
+  return words.some((word) =>
+    tokens.some(
+      (token) =>
+        word === token ||
+        word.includes(token) ||
+        token.includes(word) ||
+        levenshtein(word, token) <= 2
+    )
+  );
+}
+
 export function VoiceNavigator() {
   const router = useRouter();
   const pathname = usePathname();
   const language = useAppStore((s) => s.language);
   const role = useAppStore((s) => s.role);
+  const voiceCommandsEnabled = useAppStore((s) => s.voiceCommandsEnabled);
+  const setVoiceLastHeard = useAppStore((s) => s.setVoiceLastHeard);
   const managedStudents = useAppStore((s) => s.managedStudents);
   const logout = useAppStore((s) => s.logout);
   const selectStudentProfile = useAppStore((s) => s.selectStudentProfile);
@@ -79,7 +113,7 @@ export function VoiceNavigator() {
     const Recognition = getRecognitionCtor();
     if (!Recognition) return;
 
-    enabledRef.current = Boolean(role && !routeNeedsLocalVoice);
+    enabledRef.current = Boolean(role && voiceCommandsEnabled && !routeNeedsLocalVoice);
     if (!enabledRef.current) {
       recognitionRef.current?.stop();
       recognitionRef.current = null;
@@ -112,6 +146,7 @@ export function VoiceNavigator() {
       const latest = event.results?.[event.results.length - 1];
       const transcript = normalizeCommand(latest?.[0]?.transcript ?? "");
       if (!transcript) return;
+      setVoiceLastHeard(transcript);
 
       const openIntent = hasAny(transcript, [
         /\bopen\b/,
@@ -122,7 +157,7 @@ export function VoiceNavigator() {
         /\bkhol[oae]?\b/,
         /खोल/,
         /दिखा/,
-      ]);
+      ]) || fuzzyHasToken(transcript, ["dikhao", "dikha", "khol", "दिखाओ", "दिखा", "खोलो"]);
 
       if (pathname === "/choose-student" && managedStudentsRef.current.length > 0) {
         const match = managedStudentsRef.current.find((row) => {
@@ -164,7 +199,7 @@ export function VoiceNavigator() {
         return routeTo("/story");
       }
       if (
-        hasAny(transcript, [
+        (hasAny(transcript, [
           /\bmodules?\b/,
           /\bmodul\b/,
           /\blearn\b/,
@@ -177,7 +212,18 @@ export function VoiceNavigator() {
           /मॉड्यूल/,
           /पाठ/,
           /सीख/,
-        ]) &&
+        ]) ||
+          fuzzyHasToken(transcript, [
+            "module",
+            "modules",
+            "modul",
+            "modyul",
+            "मॉड्यूल",
+            "मडयल",
+            "मोड्यूल",
+            "पाठ",
+            "सीख",
+          ])) &&
         (openIntent || /(modules?|learn|मॉड्यूल|पाठ|सीख)/.test(transcript))
       ) {
         return routeTo("/learn");
@@ -227,7 +273,14 @@ export function VoiceNavigator() {
       recognition.stop();
       recognitionRef.current = null;
     };
-  }, [language, pathname, role, routeNeedsLocalVoice]);
+  }, [
+    language,
+    pathname,
+    role,
+    routeNeedsLocalVoice,
+    setVoiceLastHeard,
+    voiceCommandsEnabled,
+  ]);
 
   return null;
 }

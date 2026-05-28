@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { LanguageSelector } from "@/components/ui/LanguageSelector";
 import { SoundToggle } from "@/components/audio/SoundToggle";
+import { VoiceCommandToggle } from "@/components/audio/VoiceCommandToggle";
+import { HeardButton } from "@/components/audio/HeardButton";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { useAppStore } from "@/stores/app-store";
 import { t } from "@/lib/i18n/translations";
@@ -47,6 +49,8 @@ export function AppHeader({ showBack, backHref = "/", title }: AppHeaderProps) {
         </div>
         <div className="flex items-center gap-1 rounded-2xl border border-white/70 bg-white/55 p-1 shadow-[0_6px_22px_rgba(74,55,40,0.08)]">
           <LogoutButton variant="icon" />
+          <VoiceCommandToggle />
+          <HeardButton />
           <SoundToggle />
           <LanguageSelector />
         </div>

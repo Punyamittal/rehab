@@ -72,6 +72,12 @@ export function ChooseChildScreen() {
       .replace(/j/g, "z")
       .replace(/\s+/g, "");
 
+  const canonicalKey = (text: string) =>
+    normalize(devanagariToLatin(text))
+      .replace(/[^a-z0-9\s]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+
   const levenshtein = (a: string, b: string): number => {
     const m = a.length;
     const n = b.length;
@@ -96,12 +102,14 @@ export function ChooseChildScreen() {
     const heard = normalize(transcript);
     setHeardName(transcript);
     setVoiceError(null);
-    if (!heard) return;
+    if (!heard || heard.length < 2) return;
     const scored = managedStudents
       .map((row) => {
         const alias = normalize(row.student.alias);
         const heardLatin = normalize(devanagariToLatin(heard));
         const aliasLatin = normalize(devanagariToLatin(alias));
+        const heardCanonical = canonicalKey(heard);
+        const aliasCanonical = canonicalKey(alias);
         const aliasFirst = alias.split(/\s+/)[0] ?? alias;
         const heardFirst = heard.split(/\s+/)[0] ?? heard;
         let score = 0;
@@ -134,6 +142,23 @@ export function ChooseChildScreen() {
           score += 55;
         }
         if (levenshtein(heardLatin, aliasLatin) <= 2) score += 35;
+        if (
+          heardCanonical === aliasCanonical ||
+          heardCanonical.includes(aliasCanonical) ||
+          aliasCanonical.includes(heardCanonical)
+        ) {
+          score += 70;
+        }
+        if (
+          heardCanonical.split(" ")[0] &&
+          aliasCanonical.split(" ")[0] &&
+          levenshtein(
+            heardCanonical.split(" ")[0]!,
+            aliasCanonical.split(" ")[0]!
+          ) <= 1
+        ) {
+          score += 45;
+        }
 
         const phoneticMatch =
           phoneticKey(heard) === phoneticKey(alias) ||
@@ -145,23 +170,23 @@ export function ChooseChildScreen() {
       .sort((a, b) => b.score - a.score);
 
     const best = scored[0];
-    const bestAlias = best ? normalize(best.row.student.alias) : "";
-    const bestAliasFirst = bestAlias.split(/\s+/)[0] ?? bestAlias;
-    const heardFirst = heard.split(/\s+/)[0] ?? heard;
-    const strongFirstNameMatch =
-      bestAliasFirst.length > 0 &&
-      (heardFirst === bestAliasFirst ||
-        heardFirst.includes(bestAliasFirst) ||
-        bestAliasFirst.includes(heardFirst) ||
-        levenshtein(heardFirst, bestAliasFirst) <= 1);
-
-    if (best && (best.score >= 28 || strongFirstNameMatch)) {
+    if (best && best.score > 0) {
       setVoiceLoginBusy(true);
       void handleSelect(best.row.student.id).finally(() => {
         setVoiceLoginBusy(false);
       });
       return;
     }
+
+    // Practical fallback: when only one profile exists, accept voice login.
+    if (managedStudents.length === 1) {
+      setVoiceLoginBusy(true);
+      void handleSelect(managedStudents[0]!.student.id).finally(() => {
+        setVoiceLoginBusy(false);
+      });
+      return;
+    }
+
     setVoiceError("Name not found. Please try again.");
   };
 

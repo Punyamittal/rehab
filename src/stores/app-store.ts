@@ -39,6 +39,8 @@ interface AppState {
   studentEmoji: string;
   studentProfileChosen: boolean;
   soundEnabled: boolean;
+  voiceCommandsEnabled: boolean;
+  voiceLastHeard: string;
   autoNarrate: boolean;
   narrationRate: number;
   lastNarrationText: string;
@@ -60,6 +62,8 @@ interface AppState {
   clearStudentProfileChoice: () => void;
   isManagedStudent: (studentId: string) => boolean;
   setSoundEnabled: (enabled: boolean) => void;
+  setVoiceCommandsEnabled: (enabled: boolean) => void;
+  setVoiceLastHeard: (text: string) => void;
   setAutoNarrate: (enabled: boolean) => void;
   setNarrationRate: (rate: number) => void;
   setLastNarration: (text: string, language: Language) => void;
@@ -128,6 +132,8 @@ export const useAppStore = create<AppState>()(
       studentEmoji: "",
       studentProfileChosen: false,
       soundEnabled: true,
+      voiceCommandsEnabled: true,
+      voiceLastHeard: "",
       autoNarrate: false,
       narrationRate: 0.95,
       lastNarrationText: "",
@@ -142,6 +148,9 @@ export const useAppStore = create<AppState>()(
 
       setLanguage: (language) => set({ language }),
       setSoundEnabled: (soundEnabled) => set({ soundEnabled }),
+      setVoiceCommandsEnabled: (voiceCommandsEnabled) =>
+        set({ voiceCommandsEnabled }),
+      setVoiceLastHeard: (voiceLastHeard) => set({ voiceLastHeard }),
       setAutoNarrate: (autoNarrate) => set({ autoNarrate }),
       setNarrationRate: (narrationRate) =>
         set({
@@ -172,6 +181,7 @@ export const useAppStore = create<AppState>()(
         set({
           role,
           facilitatorUnlocked: false,
+          voiceCommandsEnabled: role ? true : false,
           ...(role === "student" ? { studentProfileChosen: false } : {}),
         }),
 
@@ -179,6 +189,7 @@ export const useAppStore = create<AppState>()(
         set({
           role: null,
           facilitatorUnlocked: false,
+          voiceCommandsEnabled: false,
           studentProfileChosen: false,
         }),
 
@@ -447,6 +458,8 @@ export const useAppStore = create<AppState>()(
         studentEmoji: state.studentEmoji,
         studentProfileChosen: state.studentProfileChosen,
         soundEnabled: state.soundEnabled,
+        voiceCommandsEnabled: state.voiceCommandsEnabled,
+        voiceLastHeard: state.voiceLastHeard,
         autoNarrate: state.autoNarrate,
         narrationRate: state.narrationRate,
         lastNarrationText: state.lastNarrationText,
