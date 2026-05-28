@@ -36,12 +36,25 @@ export function LanguageSelector({ className }: { className?: string }) {
 
   return (
     <div className={cn("flex flex-col items-end gap-1", className)}>
-      <div className="rounded-xl border border-primary/10 bg-white/75 p-1 shadow-sm">
+      <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-white/95 to-white/80 p-1.5 shadow-[0_8px_20px_rgba(74,55,40,0.12)] backdrop-blur-sm">
+        <div className="relative">
+          <span
+            className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-sm"
+            aria-hidden
+          >
+            🌐
+          </span>
+          <span
+            className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] text-muted"
+            aria-hidden
+          >
+            ▾
+          </span>
         <select
           value={language}
           onChange={(e) => handleSelect(e.target.value as Language)}
           aria-label={t(uiLocale, "selectLanguage")}
-          className="touch-target rounded-lg bg-white px-2 py-1.5 text-[11px] font-semibold text-foreground outline-none ring-primary/30 focus:ring-2 sm:px-3 sm:py-2 sm:text-sm"
+          className="touch-target min-w-[132px] appearance-none rounded-xl border border-white/60 bg-white/90 py-1.5 pl-8 pr-7 text-[11px] font-semibold text-foreground outline-none ring-primary/30 transition focus:ring-2 sm:min-w-[170px] sm:py-2 sm:text-sm"
         >
           {LANGUAGE_CONFIGS.map((opt) => (
             <option key={opt.id} value={opt.id}>
@@ -49,6 +62,7 @@ export function LanguageSelector({ className }: { className?: string }) {
             </option>
           ))}
         </select>
+        </div>
       </div>
       <p className="hidden max-w-[260px] text-right text-[10px] leading-tight text-muted sm:block">
         {current.nativeLabel} · ☁️ {getEdgeVoiceLabel(current.id)}

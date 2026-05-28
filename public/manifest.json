@@ -1,0 +1,35 @@
+{
+  "name": "Learn & Grow",
+  "short_name": "LearnGrow",
+  "description": "Safe learning, stronger future",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fff9f5",
+  "theme_color": "#e8a87c",
+  "lang": "en",
+  "icons": [
+    {
+      "src": "/riya.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/AASHA.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
+{
+  "name": "सीखो और बढ़ो",
+  "short_name": "REHAB",
+  "description": "Safe interactive learning for rehabilitation centres",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fff9f5",
+  "theme_color": "#e8a87c",
+  "lang": "hi",
+  "orientation": "any"
+}
