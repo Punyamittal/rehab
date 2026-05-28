@@ -8,11 +8,13 @@ import { useCatalogStore } from "@/stores/catalog-store";
 import { CatalogLoader } from "@/components/ui/CatalogLoader";
 import { t, topicLabel } from "@/lib/i18n/translations";
 import { localized } from "@/lib/i18n/content";
+import { usesEnglishContent } from "@/lib/i18n/languages";
 import { getProgressPercent, cn } from "@/lib/utils";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { VoiceDiagnostics } from "@/components/audio/VoiceDiagnostics";
+import { NarrationButton } from "@/components/audio/NarrationButton";
 import { QUICK_NAV, TOPIC_ACCENT } from "@/components/home/home-ui";
 import type { Language } from "@/types";
 
@@ -42,6 +44,11 @@ export function HomeDashboard() {
 
   const modules = useCatalogStore((s) => s.modules);
   const stories = useCatalogStore((s) => s.stories);
+  const spokenLanguage: Language = usesEnglishContent(language)
+    ? "en"
+    : language === "pa"
+      ? "pa"
+      : "hi";
   const completed = getCompletedModuleCount();
   const total = modules.length;
   const progressPercent = getProgressPercent(completed, total || 1);
@@ -112,7 +119,17 @@ export function HomeDashboard() {
           className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4"
           aria-label={t(language, "modules")}
         >
-          {QUICK_NAV.map((item, i) => (
+          {QUICK_NAV.map((item, i) => {
+            const itemLabel = t(language, item.labelKey);
+            const itemDesc =
+              language === "pa"
+                ? item.descPa
+                : localized(language, item.descHi, item.descEn);
+            const narrationLabel = t(spokenLanguage, item.labelKey);
+            const narrationDesc = spokenLanguage === "pa" ? item.descPa : itemDesc;
+            const narrationText = `${narrationLabel}. ${narrationDesc}`;
+
+            return (
             <motion.div key={item.href} custom={i + 1} variants={stagger} initial="hidden" animate="show">
               <Link href={item.href} className="group block h-full">
                 <div
@@ -130,13 +147,25 @@ export function HomeDashboard() {
                   >
                     {item.emoji}
                   </span>
-                  <p className="font-semibold leading-tight text-foreground">
-                    {t(language, item.labelKey)}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold leading-tight text-foreground">
+                      {itemLabel}
+                    </p>
+                    <div
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                    >
+                      <NarrationButton
+                        text={narrationText}
+                        speakLanguage={spokenLanguage}
+                        size="sm"
+                      />
+                    </div>
+                  </div>
                   <p className="mt-0.5 line-clamp-2 text-xs text-muted">
-                    {language === "pa"
-                      ? item.descPa
-                      : localized(language, item.descHi, item.descEn)}
+                    {itemDesc}
                   </p>
                   <span className="mt-auto pt-2 text-xs font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100">
                     {t(language, "open")} →
@@ -144,7 +173,8 @@ export function HomeDashboard() {
                 </div>
               </Link>
             </motion.div>
-          ))}
+          );
+          })}
         </nav>
 
         {/* Progress */}
@@ -155,6 +185,12 @@ export function HomeDashboard() {
           animate="show"
           className="mt-6 rounded-2xl border border-white/50 bg-white/65 p-5 shadow-[var(--safe-shadow)] backdrop-blur-md sm:rounded-3xl sm:p-6"
         >
+          {(() => {
+            const progressTitle = t(spokenLanguage, "yourProgress");
+            const progressLine = `${completed}/${total} ${t(spokenLanguage, "modules").toLowerCase()}`;
+            const progressHint = progressMessage(spokenLanguage, progressPercent);
+            const progressNarration = `${progressTitle}. ${progressLine}. ${progressHint}`;
+            return (
           <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
             <div>
               <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
@@ -167,10 +203,25 @@ export function HomeDashboard() {
                 </span>
               </p>
             </div>
+            <div
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              className="self-start"
+            >
+              <NarrationButton
+                text={progressNarration}
+                speakLanguage={spokenLanguage}
+                size="sm"
+              />
+            </div>
             <p className="max-w-[220px] text-right text-sm text-muted">
               {progressMessage(language, progressPercent)}
             </p>
           </div>
+            );
+          })()}
           <ProgressBar value={progressPercent} />
         </motion.section>
 
@@ -187,7 +238,9 @@ export function HomeDashboard() {
               const isDone = prog?.completed;
               const inProgress = prog && !isDone;
               const title = localized(language, mod.titleHi, mod.titleEn);
+              const desc = localized(language, mod.descriptionHi, mod.descriptionEn);
               const accent = TOPIC_ACCENT[mod.topic] ?? TOPIC_ACCENT.peer_pressure;
+              const narrationText = `${title}. ${desc}`;
 
               return (
                 <motion.div
@@ -222,6 +275,14 @@ export function HomeDashboard() {
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
                             <p className="font-semibold text-foreground">{title}</p>
+                            <div
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                              }}
+                            >
+                              <NarrationButton text={narrationText} size="sm" />
+                            </div>
                             {isDone && (
                               <StatusChip variant="done">
                                 {t(language, "statusDone")}
@@ -278,6 +339,7 @@ export function HomeDashboard() {
                   story.descriptionHi,
                   story.descriptionEn
                 );
+                const narrationText = `${title}. ${desc}`;
 
                 return (
                   <motion.div
@@ -309,6 +371,14 @@ export function HomeDashboard() {
                           <div className="min-w-0 flex-1">
                             <div className="flex flex-wrap items-center gap-2">
                               <p className="font-semibold text-foreground">{title}</p>
+                              <div
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                }}
+                              >
+                                <NarrationButton text={narrationText} size="sm" />
+                              </div>
                               {story.format === "interactive" && (
                                 <StatusChip variant="featured">
                                   {t(language, "statusInteractive")}

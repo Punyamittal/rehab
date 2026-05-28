@@ -33,6 +33,7 @@ import type {
 interface AppState {
   language: Language;
   role: UserRole | null;
+  facilitatorUnlocked: boolean;
   studentId: string;
   studentAlias: string;
   studentEmoji: string;
@@ -49,6 +50,8 @@ interface AppState {
   setLanguage: (lang: Language) => void;
   setRole: (role: UserRole) => void;
   logout: () => void;
+  unlockFacilitatorDashboard: (password: string) => boolean;
+  lockFacilitatorDashboard: () => void;
   setStudent: (id: string, alias: string, emoji: string) => void;
   selectStudentProfile: (studentId: string) => Promise<boolean>;
   clearStudentProfileChoice: () => void;
@@ -114,12 +117,13 @@ export const useAppStore = create<AppState>()(
     (set, get) => ({
       language: "hi",
       role: null,
+      facilitatorUnlocked: false,
       studentId: "",
       studentAlias: "",
       studentEmoji: "",
       studentProfileChosen: false,
       soundEnabled: true,
-      autoNarrate: true,
+      autoNarrate: false,
       moduleProgress: {},
       emotionLogs: [],
       gameScores: {},
@@ -153,14 +157,24 @@ export const useAppStore = create<AppState>()(
       setRole: (role) =>
         set({
           role,
+          facilitatorUnlocked: false,
           ...(role === "student" ? { studentProfileChosen: false } : {}),
         }),
 
       logout: () =>
         set({
           role: null,
+          facilitatorUnlocked: false,
           studentProfileChosen: false,
         }),
+
+      unlockFacilitatorDashboard: (password) => {
+        const allowed = password.trim() === "rehab001";
+        set({ facilitatorUnlocked: allowed });
+        return allowed;
+      },
+
+      lockFacilitatorDashboard: () => set({ facilitatorUnlocked: false }),
 
       setStudent: (studentId, studentAlias, studentEmoji) =>
         set({ studentId, studentAlias, studentEmoji }),
@@ -413,6 +427,7 @@ export const useAppStore = create<AppState>()(
       partialize: (state) => ({
         language: state.language,
         role: state.role,
+        facilitatorUnlocked: state.facilitatorUnlocked,
         studentId: state.studentId,
         studentAlias: state.studentAlias,
         studentEmoji: state.studentEmoji,

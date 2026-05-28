@@ -5,10 +5,13 @@ import { useAppStore } from "@/stores/app-store";
 import { t } from "@/lib/i18n/translations";
 import { cn } from "@/lib/utils";
 import type { VoiceGender } from "@/lib/narration/voice-profiles";
+import type { Language } from "@/types";
 
 interface NarrationButtonProps {
   /** Full text to read aloud */
   text: string;
+  /** Optional override language for speech synthesis */
+  speakLanguage?: Language;
   className?: string;
   size?: "sm" | "md" | "lg";
   voiceGender?: VoiceGender;
@@ -16,6 +19,7 @@ interface NarrationButtonProps {
 
 export function NarrationButton({
   text,
+  speakLanguage,
   className,
   size = "md",
   voiceGender,
@@ -36,7 +40,8 @@ export function NarrationButton({
     if (isSpeaking) {
       stop();
     } else {
-      void speak(text, language, { voiceGender });
+      const lang = speakLanguage ?? language;
+      void speak(text, lang, { voiceGender });
     }
   };
 

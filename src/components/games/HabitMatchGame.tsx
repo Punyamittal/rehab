@@ -73,7 +73,9 @@ export function HabitMatchGame({ game }: { game: GameDefinition }) {
 
   useReadQuestion(
     `${game.id}-intro-${language}`,
-    t(language, "habitMatchHint")
+    t(language, "habitMatchHint"),
+    undefined,
+    { force: true }
   );
 
   const finish = useCallback(() => {

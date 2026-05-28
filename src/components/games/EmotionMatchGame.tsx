@@ -53,7 +53,12 @@ export function EmotionMatchGame({ game }: { game: GameDefinition }) {
     )
   );
 
-  useReadQuestion(`${game.id}-e-${round.id}-${language}`, questionNarration);
+  useReadQuestion(
+    `${game.id}-e-${round.id}-${language}`,
+    questionNarration,
+    undefined,
+    { force: true }
+  );
 
   const pick = (emotion: EmotionType) => {
     if (flash) return;

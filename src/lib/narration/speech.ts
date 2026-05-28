@@ -327,6 +327,17 @@ export async function speakText(
 
   stopSpeaking();
 
+  // Prefer browser voice first for Punjabi when a native pa voice exists locally.
+  // This prevents immediate cloud fallback to Hindi voice for Punjabi UI text.
+  if (options.language === "pa") {
+    const paVoice = pickVoice("pa", options.voiceGender);
+    const voiceLang = paVoice?.lang?.toLowerCase() ?? "";
+    if (voiceLang.startsWith("pa")) {
+      await speakViaBrowser(text, options);
+      return;
+    }
+  }
+
   const useCloud =
     typeof window !== "undefined" &&
     (navigator.onLine === undefined || navigator.onLine);

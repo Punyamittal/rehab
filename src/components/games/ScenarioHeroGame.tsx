@@ -51,7 +51,12 @@ export function ScenarioHeroGame({ game }: { game: GameDefinition }) {
     }
   );
 
-  useReadQuestion(`${game.id}-q-${q.id}-${language}`, questionNarration);
+  useReadQuestion(
+    `${game.id}-q-${q.id}-${language}`,
+    questionNarration,
+    undefined,
+    { force: true }
+  );
 
   const handleChoice = (
     choiceId: string,

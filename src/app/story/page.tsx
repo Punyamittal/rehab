@@ -9,6 +9,7 @@ import { localized } from "@/lib/i18n/content";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { Card } from "@/components/ui/Card";
 import { CatalogLoader } from "@/components/ui/CatalogLoader";
+import { NarrationButton } from "@/components/audio/NarrationButton";
 
 export default function StoriesCatalogPage() {
   const { language } = useAppStore();
@@ -28,6 +29,7 @@ export default function StoriesCatalogPage() {
               story.descriptionHi,
               story.descriptionEn
             );
+            const narrationText = `${title}. ${desc}`;
             return (
               <motion.div
                 key={story.id}
@@ -38,7 +40,17 @@ export default function StoriesCatalogPage() {
                 <Link href={`/story/${story.slug}`}>
                   <Card hover>
                     <span className="text-4xl">{story.emoji}</span>
-                    <h2 className="mt-2 text-xl font-semibold">{title}</h2>
+                    <div className="mt-2 flex items-center gap-2">
+                      <h2 className="text-xl font-semibold">{title}</h2>
+                      <div
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                      >
+                        <NarrationButton text={narrationText} size="sm" />
+                      </div>
+                    </div>
                     <p className="text-sm text-muted">{desc}</p>
                     <p className="mt-2 text-xs text-muted">
                       {topicLabel(language, story.topic)} ·{" "}

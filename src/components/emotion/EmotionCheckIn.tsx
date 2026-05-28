@@ -47,7 +47,10 @@ export function EmotionCheckIn({
 
   useAutoNarrate(
     `checkin-${checkType}-${moduleId ?? "standalone"}-${language}`,
-    fullPrompt
+    fullPrompt,
+    undefined,
+    undefined,
+    { force: true }
   );
 
   const handleContinue = () => {

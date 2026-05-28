@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { loadVoices, isSpeechSupported } from "@/lib/narration/speech";
 import { HtmlLangSync } from "@/components/providers/HtmlLangSync";
 import { StudentPathGuard } from "@/components/student/StudentPathGuard";
-import { HoverReadAloud } from "@/components/audio/HoverReadAloud";
 import { useSupabaseBootstrap } from "@/hooks/useSupabaseBootstrap";
 
 function SupabaseBootstrap() {
@@ -35,7 +34,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       <HtmlLangSync />
       <SupabaseBootstrap />
       <StudentPathGuard />
-      <HoverReadAloud />
       {children}
     </>
   );

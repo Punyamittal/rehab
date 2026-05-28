@@ -13,6 +13,7 @@ import {
   LINE_PAUSE_MS,
   SPEECH_FALLBACK_BUFFER_MS,
 } from "@/lib/narration/story-timing";
+import { applySpokenOverrides } from "@/lib/narration/spoken-overrides";
 import { useAppStore } from "@/stores/app-store";
 import type { Language } from "@/types";
 import type { VoiceGender } from "@/lib/narration/voice-profiles";
@@ -40,9 +41,10 @@ export function useNarration() {
       const script = opts?.title
         ? buildNarrationScript(opts.title, opts.body ?? text)
         : text;
+      const spokenScript = applySpokenOverrides(lang, script);
 
       const id = ++idRef.current;
-      await speakText(script, {
+      await speakText(spokenScript, {
         language: lang,
         voiceGender: opts?.voiceGender,
         onStart: () => {
@@ -80,13 +82,16 @@ export function useAutoNarrate(
   contentKey: string,
   text: string,
   title?: string,
-  voiceGender?: VoiceGender
+  voiceGender?: VoiceGender,
+  options?: { force?: boolean }
 ) {
   const { autoNarrate, soundEnabled, language } = useAppStore();
-  const { speak, stop } = useNarration();
+  const { speak } = useNarration();
+  const force = options?.force ?? false;
 
   useEffect(() => {
-    if (!autoNarrate || !soundEnabled || !text.trim()) return;
+    const shouldAutoNarrate = force || autoNarrate;
+    if (!shouldAutoNarrate || !soundEnabled || !text.trim()) return;
 
     const timer = setTimeout(() => {
       void speak(text, language, {
@@ -102,6 +107,7 @@ export function useAutoNarrate(
   }, [
     contentKey,
     autoNarrate,
+    force,
     soundEnabled,
     language,
     text,
@@ -161,7 +167,8 @@ export function useSpeechThenAdvance({
     if (useVoice) {
       const startTimer = window.setTimeout(() => {
         if (cancelled) return;
-        void speakText(text, {
+        const spokenText = applySpokenOverrides(language, text);
+        void speakText(spokenText, {
           language,
           voiceGender,
           onEnd: () => {
@@ -202,7 +209,14 @@ export function useSpeechThenAdvance({
 export function useReadQuestion(
   contentKey: string,
   narrationScript: string,
-  voiceGender?: VoiceGender
+  voiceGender?: VoiceGender,
+  options?: { force?: boolean }
 ) {
-  useAutoNarrate(contentKey, narrationScript, undefined, voiceGender);
+  useAutoNarrate(
+    contentKey,
+    narrationScript,
+    undefined,
+    voiceGender,
+    options
+  );
 }

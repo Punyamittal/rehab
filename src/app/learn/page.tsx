@@ -7,6 +7,7 @@ import { localized } from "@/lib/i18n/content";
 import { t } from "@/lib/i18n/translations";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { CatalogLoader } from "@/components/ui/CatalogLoader";
+import { NarrationButton } from "@/components/audio/NarrationButton";
 
 export default function LearnPage() {
   const language = useAppStore((s) => s.language);
@@ -21,6 +22,8 @@ export default function LearnPage() {
           {modules.map((mod) => {
             const prog = moduleProgress[mod.id];
             const title = localized(language, mod.titleHi, mod.titleEn);
+            const desc = localized(language, mod.descriptionHi, mod.descriptionEn);
+            const narrationText = `${title}. ${desc}`;
             return (
               <Link
                 key={mod.id}
@@ -29,7 +32,17 @@ export default function LearnPage() {
               >
                 <span className="text-4xl">{mod.emoji}</span>
                 <div className="flex-1">
-                  <p className="text-xl font-semibold">{title}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xl font-semibold">{title}</p>
+                    <div
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                    >
+                      <NarrationButton text={narrationText} size="sm" />
+                    </div>
+                  </div>
                   <p className="text-sm text-muted">
                     {prog?.completed
                       ? "✓ " + t(language, "statusDone")

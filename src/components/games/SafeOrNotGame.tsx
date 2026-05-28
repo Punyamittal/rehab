@@ -37,7 +37,12 @@ export function SafeOrNotGame({ game }: { game: GameDefinition }) {
   const nextItem = SAFE_OR_NOT_ITEMS[index + 1];
   const itemNarration = localized(language, item.textHi, item.textEn);
 
-  useReadQuestion(`${game.id}-safe-${item.id}-${language}`, itemNarration);
+  useReadQuestion(
+    `${game.id}-safe-${item.id}-${language}`,
+    itemNarration,
+    undefined,
+    { force: true }
+  );
 
   const answer = (pickedSafe: boolean) => {
     if (feedback) return;

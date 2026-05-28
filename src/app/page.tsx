@@ -13,7 +13,6 @@ import type { UserRole } from "@/types";
 const ROLES: { role: UserRole; emoji: string; href: string }[] = [
   { role: "student", emoji: "🌸", href: "/choose-student" },
   { role: "facilitator", emoji: "📋", href: "/dashboard" },
-  { role: "volunteer", emoji: "🤝", href: "/guide" },
 ];
 
 export default function LandingPage() {
@@ -39,7 +38,7 @@ export default function LandingPage() {
         router.replace("/choose-student");
       }
     } else if (role === "facilitator") router.replace("/dashboard");
-    else if (role === "volunteer") router.replace("/guide");
+    else if (role === "volunteer") router.replace("/");
   }, [
     role,
     router,
