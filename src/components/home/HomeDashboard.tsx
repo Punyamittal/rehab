@@ -333,7 +333,9 @@ export function HomeDashboard() {
               linkLabel={t(language, "viewAllLink")}
             />
             <div className="mt-4 grid gap-3 sm:grid-cols-2 sm:gap-4">
-              {stories.map((story, i) => {
+              {stories
+                .filter((story) => story.slug !== "before-the-exam")
+                .map((story, i) => {
                 const isFeatured = story.slug === "do-raste";
                 const title = localized(language, story.titleHi, story.titleEn);
                 const desc = localized(

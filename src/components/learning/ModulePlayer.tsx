@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { LearningModule, ModuleSlide } from "@/types";
 import { useAppStore } from "@/stores/app-store";
@@ -14,6 +14,7 @@ import { NarrationButton } from "@/components/audio/NarrationButton";
 import { AppControls } from "@/components/layout/AppControls";
 import { buildNarrationScript } from "@/lib/narration/speech";
 import { buildChoicesNarration } from "@/lib/narration/question-narration";
+import { estimateDwellMs } from "@/lib/narration/story-timing";
 import { localized } from "@/lib/i18n/content";
 import type { Language } from "@/types";
 
@@ -159,22 +160,78 @@ function SlideContent({
 }) {
   const title = localized(language, slide.titleHi, slide.titleEn);
   const body = localized(language, slide.bodyHi, slide.bodyEn);
+  const { soundEnabled, autoNarrate } = useAppStore();
+  const [activeNarrationPart, setActiveNarrationPart] = useState<string | null>(null);
+  const shouldAutoNarrate = soundEnabled && (autoNarrate || slide.type === "quiz");
+  const choiceLabels = useMemo(
+    () =>
+      slide.type === "quiz" && slide.choices
+        ? slide.choices.map((c) => localized(language, c.labelHi, c.labelEn))
+        : [],
+    [language, slide.choices, slide.type]
+  );
   const choicesPart =
-    slide.type === "quiz" && slide.choices
-      ? buildChoicesNarration(language, slide.choices)
+    slide.type === "quiz" && choiceLabels.length
+      ? buildChoicesNarration(
+          language,
+          slide.choices ?? []
+        )
       : "";
   const narrationText = buildNarrationScript(title, body, choicesPart);
 
-  useAutoNarrate(`${slideKey}-${language}`, narrationText);
+  useAutoNarrate(
+    `${slideKey}-${language}`,
+    narrationText,
+    undefined,
+    undefined,
+    { force: slide.type === "quiz" }
+  );
+
+  useEffect(() => {
+    setActiveNarrationPart(null);
+    if (!shouldAutoNarrate) return;
+
+    const timers: number[] = [];
+    let elapsed = 450;
+
+    const queue = (key: string, text: string) => {
+      const start = window.setTimeout(() => setActiveNarrationPart(key), elapsed);
+      timers.push(start);
+      elapsed += estimateDwellMs(text, true);
+    };
+
+    queue("title", title);
+    queue("body", body);
+    choiceLabels.forEach((label, index) => queue(`choice-${index}`, label));
+
+    const clear = window.setTimeout(() => setActiveNarrationPart(null), elapsed + 120);
+    timers.push(clear);
+
+    return () => {
+      timers.forEach((id) => window.clearTimeout(id));
+    };
+  }, [body, choiceLabels, shouldAutoNarrate, slideKey, title]);
 
   return (
     <Card className="min-h-[280px]">
       <div className="mb-4 flex items-start justify-between gap-4">
-        <h2 className="text-2xl font-semibold">{title}</h2>
+        <h2
+          className={`rounded-xl px-2 py-1 text-2xl font-semibold transition-colors ${
+            activeNarrationPart === "title" ? "bg-primary/20 ring-1 ring-primary/30" : ""
+          }`}
+        >
+          {title}
+        </h2>
         <NarrationButton text={narrationText} />
       </div>
 
-      <p className="text-lg leading-relaxed text-foreground/90">{body}</p>
+      <p
+        className={`rounded-xl px-2 py-1 text-lg leading-relaxed text-foreground/90 transition-colors ${
+          activeNarrationPart === "body" ? "bg-secondary/18 ring-1 ring-secondary/30" : ""
+        }`}
+      >
+        {body}
+      </p>
 
       {slide.type === "quiz" && slide.choices && (
         <div className="mt-6 flex flex-col gap-3">
@@ -192,7 +249,9 @@ function SlideContent({
                     ? choice.correct
                       ? "border-accent bg-accent/20"
                       : "border-primary/50 bg-primary/10"
-                    : "border-white bg-white/60 hover:bg-white"
+                    : activeNarrationPart === `choice-${slide.choices?.findIndex((c) => c.id === choice.id) ?? -1}`
+                      ? "border-secondary/45 bg-secondary/20"
+                      : "border-white bg-white/60 hover:bg-white"
                 }`}
               >
                 {label}
