@@ -1,14 +1,18 @@
 import type { Language, StoryCharacter } from "@/types";
 import { localized } from "@/lib/i18n/content";
 
+/** Good Cop / Bad Cop visuals for explanatory & dialogue scenes */
 export const STORY_CHARACTER_IMAGES: Record<
   Exclude<StoryCharacter, "narrator">,
   string
 > = {
   asha: "/AASHA.png",
-  tanya: "/TANNYA.png",
-  riya: "/riya.png",
+  tanya: "/BADCOP.png",
+  riya: "/GOODCOP.png",
 };
+
+export const GOOD_COP_IMAGE = "/GOODCOP.png";
+export const BAD_COP_IMAGE = "/BADCOP.png";
 
 export const STORY_CHARACTER_STYLES: Record<
   Exclude<StoryCharacter, "narrator">,

@@ -11,6 +11,7 @@ interface RecognitionAlternative {
 
 interface RecognitionResultLike {
   0: RecognitionAlternative;
+  isFinal?: boolean;
 }
 
 interface RecognitionEventLike {
@@ -96,6 +97,7 @@ export function VoiceInputButton({
     };
     recognition.onresult = (event) => {
       const latest = event.results?.[event.results.length - 1];
+      if (!latest?.isFinal) return;
       const transcript = latest?.[0]?.transcript?.trim();
       if (transcript) onResult(transcript);
     };

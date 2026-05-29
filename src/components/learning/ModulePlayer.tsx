@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import type { LearningModule, ModuleSlide } from "@/types";
 import { useAppStore } from "@/stores/app-store";
@@ -17,7 +18,10 @@ import { buildNarrationScript } from "@/lib/narration/speech";
 import { buildChoicesNarration } from "@/lib/narration/question-narration";
 import { estimateDwellMs } from "@/lib/narration/story-timing";
 import { localized } from "@/lib/i18n/content";
+import { GOOD_COP_IMAGE } from "@/components/story/story-characters";
 import type { Language } from "@/types";
+
+const CONTENT_SLIDE_IMAGE = GOOD_COP_IMAGE;
 
 interface ModulePlayerProps {
   module: LearningModule;
@@ -201,7 +205,7 @@ function SlideContent({
         )
       : "";
   const narrationText = buildNarrationScript(title, body, choicesPart);
-  const [autoListenTick, setAutoListenTick] = useState(0);
+  const { isSpeaking } = useNarration();
   const normalize = (text: string) =>
     text.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, "").trim();
 
@@ -238,18 +242,6 @@ function SlideContent({
     };
   }, [body, choiceLabels, shouldAutoNarrate, slideKey, title]);
 
-  useEffect(() => {
-    if (slide.type !== "quiz" || !slide.choices?.length) return;
-    const delayMs = shouldAutoNarrate
-      ? estimateDwellMs(narrationText, true) + 700
-      : 450;
-    const timer = window.setTimeout(
-      () => setAutoListenTick((n) => n + 1),
-      delayMs
-    );
-    return () => window.clearTimeout(timer);
-  }, [narrationText, shouldAutoNarrate, slide.choices, slide.type, slideKey]);
-
   return (
     <Card className="min-h-[280px]">
       <div className="mb-4 flex items-start justify-between gap-4">
@@ -265,8 +257,8 @@ function SlideContent({
           {slide.type === "quiz" && slide.choices && (
             <VoiceInputButton
               language={language}
-              autoStartKey={`${slideKey}-${autoListenTick}`}
               onResult={(transcript) => {
+                if (isSpeaking || selectedChoice) return;
                 const heard = normalize(transcript);
                 const match = slide.choices?.find((choice) =>
                   normalize(localized(language, choice.labelHi, choice.labelEn)).includes(
@@ -281,6 +273,19 @@ function SlideContent({
           )}
         </div>
       </div>
+
+      {slide.type === "content" && (
+        <div className="mb-4 overflow-hidden rounded-2xl border border-white/60 bg-white/40 shadow-sm">
+          <Image
+            src={slide.image ?? CONTENT_SLIDE_IMAGE}
+            alt=""
+            width={800}
+            height={450}
+            className="aspect-[16/9] w-full object-cover object-center"
+            priority
+          />
+        </div>
+      )}
 
       <p
         className={`rounded-xl px-2 py-1 text-lg leading-relaxed text-foreground/90 transition-colors ${

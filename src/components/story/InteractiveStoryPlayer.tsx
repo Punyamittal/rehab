@@ -16,7 +16,9 @@ import { usesEnglishContent } from "@/lib/i18n/languages";
 import { t } from "@/lib/i18n/translations";
 import type { Language } from "@/types";
 import { NarrationButton } from "@/components/audio/NarrationButton";
+import Image from "next/image";
 import { CharacterPortraitOrNull } from "@/components/story/CharacterPortrait";
+import { GOOD_COP_IMAGE } from "@/components/story/story-characters";
 import { isPortraitCharacter } from "@/components/story/story-characters";
 import { StoryReactionMedia } from "@/components/story/StoryReactionMedia";
 import {
@@ -410,6 +412,15 @@ function CompactScenePanel({
 
         {scene.type === "learning" && (
           <div className="flex w-full flex-col justify-center">
+            <div className="mb-3 overflow-hidden rounded-2xl border border-emerald-400/25 ring-1 ring-emerald-400/20">
+              <Image
+                src={GOOD_COP_IMAGE}
+                alt=""
+                width={800}
+                height={450}
+                className="aspect-[16/9] w-full max-h-[min(28vh,200px)] object-cover object-center"
+              />
+            </div>
             <div className="mb-3 flex justify-center">
               <StoryReactionMedia
                 emoji={media.emoji}
